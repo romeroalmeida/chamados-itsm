@@ -7,6 +7,7 @@ import { useNow } from '@/shared/hooks/useNow'
 import { formatarDataHora } from '@/shared/utils/datas'
 import { sugerirParecido } from '@/shared/utils/similaridade'
 import { useSessao } from '@/state/sessao'
+import { Trilha } from '../../components/Trilha/Trilha'
 import { amigavel } from '../../utils/categoriasAmigaveis'
 import s from './NovoChamadoPage.module.css'
 
@@ -36,27 +37,32 @@ export function NovoChamadoPage() {
   }
 
   return (
-    <form className={s.pagina} onSubmit={enviar} aria-labelledby="t-novo">
-      <h1 id="t-novo" style={{ margin: 0, fontSize: 20 }}>Abrir chamado</h1>
-      <div>
-        <span style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 4 }}>O que parou?</span>
-        <Select ariaLabel="O que parou" valor={categoria} onChange={setCategoria} placeholder="Escolha" opcoes={categorias.map((c) => ({ valor: c.id, rotulo: amigavel(c.nome) }))} />
-      </div>
-      <Campo rotulo="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} required maxLength={120} placeholder="Em uma frase, o que está acontecendo" />
-      {mostrarSugestao && (
-        <div role="status" style={{ background: 'var(--cor-interna)', border: '1px solid var(--cor-interna-borda)', borderRadius: 'var(--raio)', padding: 12, display: 'grid', gap: 8 }}>
-          <span>Parece com seu chamado <strong>#{parecido.numero}</strong> ({parecido.status === 'fechado' ? 'fechado' : 'resolvido'} em {formatarDataHora(parecido.atualizado_em, usuario, { day: '2-digit', month: '2-digit' })}). É o mesmo problema?</span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variante="primaria" onClick={() => nav(`/chamados/${parecido.id}`, { state: { reabrir: descricao.trim() || titulo.trim() } })}>Reabrir esse</Button>
-            <Button onClick={() => setDescartou(parecido.id)}>É outro</Button>
-          </div>
+    <div className={s.pagina}>
+      <Trilha perfil="cliente" />
+      <form className={s.cartao} onSubmit={enviar} aria-labelledby="t-novo">
+        <div className={s.cabeca}>
+          <h1 id="t-novo" className={s.titulo}>Abrir chamado</h1>
         </div>
-      )}
-      <Campo multilinha rotulo="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required rows={5} placeholder="O que você estava fazendo, o que apareceu na tela, desde quando" />
-      <div style={{ display: 'flex', gap: 8 }}>
-        <Button type="submit" variante="primaria" disabled={abrir.isPending || !categoria || !titulo.trim() || !descricao.trim()}>Abrir chamado</Button>
-        <Button onClick={() => nav('/meus-chamados')}>Cancelar</Button>
-      </div>
-    </form>
+        <div className={s.grupo}>
+          <span className={s.rotulo}>O que parou?</span>
+          <Select className={s.selecao} ariaLabel="O que parou" valor={categoria} onChange={setCategoria} placeholder="Escolha" opcoes={categorias.map((c) => ({ valor: c.id, rotulo: amigavel(c.nome) }))} />
+        </div>
+        <Campo rotulo="Título" value={titulo} onChange={(e) => setTitulo(e.target.value)} required maxLength={120} placeholder="Em uma frase, o que está acontecendo" />
+        {mostrarSugestao && (
+          <div role="status" className={s.sugestao}>
+            <span>Parece com seu chamado <strong>#{parecido.numero}</strong> ({parecido.status === 'fechado' ? 'fechado' : 'resolvido'} em {formatarDataHora(parecido.atualizado_em, usuario, { day: '2-digit', month: '2-digit' })}). É o mesmo problema?</span>
+            <div className={s.botoes}>
+              <Button variante="primaria" onClick={() => nav(`/chamados/${parecido.id}`, { state: { reabrir: descricao.trim() || titulo.trim() } })}>Reabrir esse</Button>
+              <Button onClick={() => setDescartou(parecido.id)}>É outro</Button>
+            </div>
+          </div>
+        )}
+        <Campo multilinha rotulo="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required rows={5} placeholder="O que você estava fazendo, o que apareceu na tela, desde quando" />
+        <div className={`${s.botoes} ${s.rodape}`}>
+          <Button type="submit" variante="primaria" disabled={abrir.isPending || !categoria || !titulo.trim() || !descricao.trim()}>Abrir chamado</Button>
+          <Button onClick={() => nav('/meus-chamados')}>Cancelar</Button>
+        </div>
+      </form>
+    </div>
   )
 }

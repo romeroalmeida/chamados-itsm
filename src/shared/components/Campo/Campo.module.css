@@ -1,6 +1,11 @@
-.campo { display: grid; gap: var(--espaco-1); }
-.rotulo { font-weight: 600; font-size: 13px; }
-.entrada { padding: 8px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); background: var(--cor-superficie); width: 100%; }
-.entrada:focus { border-color: var(--cor-primaria); box-shadow: 0 0 0 3px var(--cor-primaria-suave); outline: none; }
+/* mesmo estilo de campo do login */
+.campo { display: grid; gap: 6px; }
+.rotulo { font-weight: 600; font-size: 13.5px; }
+.entrada { width: 100%; padding: 11px 14px; border: 1.5px solid transparent; border-radius: 12px; background: #f2f3f8; outline: none; transition: border-color var(--transicao), background var(--transicao), box-shadow var(--transicao); }
+textarea.entrada { resize: vertical; line-height: 1.5; }
+.entrada::placeholder { color: #6b7280; }
+.entrada:hover { background: #eceef5; }
+.entrada:focus { border-color: var(--cor-primaria); background: #fff; box-shadow: 0 0 0 4px rgb(79 70 229 / 14%); }
+.entrada[aria-invalid="true"] { border-color: var(--sla-vencido); }
 .erro { color: var(--sla-vencido); font-size: 12px; }
 .ajuda { color: var(--cor-texto-fraco); font-size: 12px; }

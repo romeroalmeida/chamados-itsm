@@ -1,4 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Perfil } from '@/shared/types'
 import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { useSessao } from '@/state/sessao'
@@ -17,6 +18,7 @@ export function Cabecalho() {
   const usuario = useSessao((st) => st.usuario)
   const sair = useSessao((st) => st.sair)
   const nav = useNavigate()
+  const cache = useQueryClient()
   if (!usuario) return null
   const { perfil } = usuario
   return (
@@ -43,7 +45,7 @@ export function Cabecalho() {
         <span className={s.avatar} aria-hidden>{iniciais(usuario.nome)}</span>
         <span className={s.quem}><strong>{usuario.nome}</strong><small>{ROTULO_PERFIL[perfil]}</small></span>
       </div>
-      <button type="button" className={s.sair} onClick={() => { sair(); nav('/entrar') }}>Sair</button>
+      <button type="button" className={s.sair} onClick={() => { sair(); cache.clear(); nav('/entrar') /* sem clear, quem entra depois na mesma aba vê a lista do anterior */ }}>Sair</button>
     </header>
   )
 }

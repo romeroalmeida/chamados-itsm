@@ -1,0 +1,10 @@
+.painel { display: grid; gap: var(--espaco-2); padding: var(--espaco-4); border: 1px solid #dcdcfb; border-radius: var(--raio-cartao); background: var(--cor-primaria-suave); }
+.topo { display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-3); }
+.titulo { color: #1e1a6b; font-weight: 600; }
+.lista { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.lista li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--espaco-2); }
+.link { padding: 0; border: 0; border-radius: 4px; background: none; font-weight: 600; color: var(--cor-primaria); text-align: left; }
+.link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.numero { font-family: var(--fonte-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.novidade { color: var(--cor-texto-fraco); }
+.novidade::before { content: "· "; }

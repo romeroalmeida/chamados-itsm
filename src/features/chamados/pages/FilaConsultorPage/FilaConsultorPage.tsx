@@ -56,10 +56,13 @@ export function FilaConsultorPage() {
         <FaixaAlerta resumo={resumo} onFiltrar={(qual) => { setFiltro((f) => ({ ...f, aba: 'meus', status: 'ativos' })); setSoAlerta((a) => (a === qual ? null : qual)) }} />
         <Tabs ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Do grupo, sem dono', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => { setFiltro((f) => ({ ...f, aba: v as AbaFila })); setSoAlerta(null) }}>
           <div className={s.filtros}>
-            <input className={s.busca} type="search" placeholder="Número, título ou cliente" aria-label="Buscar chamado" value={filtro.busca} onChange={(e) => setFiltro((f) => ({ ...f, busca: e.target.value }))} />
+            <label className={s.busca}>
+              <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input type="search" placeholder="Número, título ou cliente" aria-label="Buscar chamado" value={filtro.busca} onChange={(e) => setFiltro((f) => ({ ...f, busca: e.target.value }))} />
+            </label>
             <Select ariaLabel="Status" valor={filtro.status} onChange={(v) => setFiltro((f) => ({ ...f, status: v as FiltroStatus }))} opcoes={OPCOES_STATUS} />
             <Select ariaLabel="Ordenar" valor={filtro.ordem} onChange={(v) => setFiltro((f) => ({ ...f, ordem: v as OrdemFila }))} opcoes={OPCOES_ORDEM} />
-            {soAlerta && <button onClick={() => setSoAlerta(null)} style={{ background: 'none', border: 0, color: 'var(--cor-primaria)', textDecoration: 'underline' }}>limpar filtro de alerta</button>}
+            {soAlerta && <button type="button" className={s.limpar} onClick={() => setSoAlerta(null)}>limpar filtro de alerta</button>}
           </div>
         </Tabs>
         <ListaChamados chamados={lista} agora={agora} usuario={usuario} usuarios={usuarios} ativoId={id} onAbrir={(cid) => nav(`/fila/${cid}`)} vazio={filtro.aba === 'meus' ? 'Nenhum chamado seu com esse filtro.' : 'Fila do grupo vazia. Bom sinal.'} />
@@ -73,7 +76,12 @@ export function FilaConsultorPage() {
               <DetalheChamado key={id} id={id} usuario={usuario} />
             </>
           )
-          : <div className={s.vazioDetalhe}>Escolha um chamado na fila. O primeiro é o que estoura antes.</div>}
+          : (
+            <div className={s.vazioDetalhe}>
+              <span className={s.vazioIcone}><svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg></span>
+              <p>Escolha um chamado na fila. O primeiro é o que estoura antes.</p>
+            </div>
+          )}
       </section>
     </div>
   )

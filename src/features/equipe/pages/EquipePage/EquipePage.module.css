@@ -1,15 +1,12 @@
-.pagina { padding: var(--espaco-4); display: grid; gap: var(--espaco-4); max-width: 1400px; margin: 0 auto; }
-.secao { display: grid; gap: var(--espaco-2); }
-.titulo { margin: 0; font-size: 16px; display: flex; gap: var(--espaco-2); align-items: baseline; }
-.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--espaco-3); }
-.cartao { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: var(--espaco-3); display: grid; gap: 6px; text-align: left; }
-.cartao:hover { border-color: var(--cor-primaria); }
-.semChamado { border-color: var(--sla-atencao); background: #fff9e8; }
-.nome { font-weight: 600; display: flex; justify-content: space-between; }
-.numeros { display: flex; gap: var(--espaco-3); font-size: 13px; color: var(--cor-texto-fraco); }
-.numeros strong { color: var(--cor-texto); }
-.vermelho { color: var(--sla-vencido) !important; } .laranja { color: var(--sla-critico) !important; }
-.rolagem { overflow-x: auto; }
-.tabela { width: 100%; border-collapse: collapse; background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); font-size: 13px; }
-.tabela th, .tabela td { padding: 8px 10px; border-bottom: 1px solid var(--cor-borda); text-align: left; }
-.link { background: none; border: 0; color: var(--cor-primaria); text-decoration: underline; padding: 0; }
+.pagina { display: grid; gap: 32px; max-width: 1280px; margin: 0 auto; padding: var(--espaco-6); }
+.alerta { overflow: hidden; border: 1px solid #fecaca; border-radius: var(--raio-cartao); }
+.alerta:empty { display: none; }
+.alerta > div { border-bottom: 0; }
+.secao { display: grid; gap: var(--espaco-3); }
+.titulo { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--espaco-1) 10px; margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.015em; }
+.titulo small { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--cor-texto-fraco); }
+.subtitulo { margin: 0; font-size: 14px; font-weight: 600; }
+.contagem { padding: 1px 8px; border-radius: 999px; background: var(--cor-superficie-2); font-size: 12px; font-weight: 600; color: var(--cor-texto-fraco); font-variant-numeric: tabular-nums; }
+.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--espaco-3); }
+.detalhe { display: grid; gap: var(--espaco-3); padding: var(--espaco-4); border: 1px solid var(--cor-borda); border-radius: var(--raio-cartao); background: var(--cor-superficie-2); }
+@media (max-width: 720px) { .pagina { gap: var(--espaco-6); padding: var(--espaco-4); } }

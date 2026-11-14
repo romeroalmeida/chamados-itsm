@@ -58,3 +58,4 @@
 @media (max-width: 720px) {
   .cabecalho, .barraAcoes, .conversa, .caixa, .historico, .passos { padding-left: var(--espaco-4); padding-right: var(--espaco-4); }
 }
+.barraAcoes:has(> .acoes:empty) { display: none; }

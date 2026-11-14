@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Chamado, Usuario, UsuarioConsultor } from '@/shared/types'
 import { useAtribuir } from '@/api/queries'
 import { BadgePrazo, Button, Select, useToast } from '@/shared/components'
-import s from '../pages/EquipePage/EquipePage.module.css'
+import s from './equipe.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; usuarios: Record<string, Usuario>; agora: number; onFechar: () => void }
 
@@ -21,7 +21,7 @@ export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar 
     else { notificar({ titulo: `${marcados.size} chamados redistribuídos` }); onFechar() }
   }
   return (
-    <div className={s.secao}>
+    <div className={s.painel}>
       <div className={s.rolagem}>
         <table className={s.tabela}>
           <thead><tr><th></th><th>#</th><th>Título</th><th>Cliente</th><th>Prazo</th></tr></thead>
@@ -29,13 +29,13 @@ export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar 
             {chamados.map((c) => (
               <tr key={c.id}>
                 <td><input type="checkbox" aria-label={`Selecionar #${c.numero}`} checked={marcados.has(c.id)} onChange={() => alternar(c.id)} /></td>
-                <td>{c.numero}</td><td>{c.titulo}</td><td>{usuarios[c.solicitante_id]?.nome}</td><td><BadgePrazo chamado={c} agora={agora} /></td>
+                <td className={s.num}>#{c.numero}</td><td>{c.titulo}</td><td>{usuarios[c.solicitante_id]?.nome}</td><td><BadgePrazo chamado={c} agora={agora} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className={s.barra}>
         <Select ariaLabel="Destino" valor={destino} onChange={setDestino} placeholder="Redistribuir para…" opcoes={consultores.map((c) => ({ valor: c.id, rotulo: c.nome }))} />
         <Button variante="primaria" disabled={!destino || marcados.size === 0 || atribuir.isPending} onClick={executar}>Redistribuir {marcados.size || ''}</Button>
         <Button onClick={onFechar}>Fechar</Button>

@@ -38,24 +38,24 @@ export function EquipePage() {
 
   return (
     <div className={s.pagina}>
-      <FaixaAlerta resumo={resumo} sufixo="da equipe" />
+      <div className={s.alerta}><FaixaAlerta resumo={resumo} sufixo="da equipe" /></div>
       <section className={s.secao} aria-labelledby="t-equipe">
-        <h2 id="t-equipe" className={s.titulo}>Equipe <small style={{ color: 'var(--cor-texto-fraco)' }}>{consultores.length} consultores · ordenado por quem está pior</small></h2>
+        <h2 id="t-equipe" className={s.titulo}>Equipe <small>{consultores.length} consultores · ordenado por quem está pior</small></h2>
         <div className={s.cartoes}>{agregados.map((a) => <CartaoConsultor key={a.consultor.id} a={a} grupo={nomeGrupo(a.consultor.grupo_id)} onAbrir={() => setAberto(a.consultor.id)} />)}</div>
         {consultorAberto && (
-          <div className={s.secao}>
-            <h3 className={s.titulo}>Chamados de {consultorAberto.consultor.nome}</h3>
+          <div className={s.detalhe}>
+            <h3 className={s.subtitulo}>Chamados de {consultorAberto.consultor.nome}</h3>
             <Redistribuir key={consultorAberto.consultor.id} chamados={ordenarEstouraPrimeiro(lista.filter((c) => c.responsavel_id === consultorAberto.consultor.id && !ehEncerrado(c)), agora)}
               consultores={consultores.filter((k) => k.grupo_id === consultorAberto.consultor.grupo_id && k.id !== consultorAberto.consultor.id)} usuarios={usuarios} agora={agora} onFechar={() => setAberto(null)} />
           </div>
         )}
       </section>
       <section className={s.secao} aria-labelledby="t-vencendo">
-        <h2 id="t-vencendo" className={s.titulo}>Vencendo nas próximas 4 horas <small style={{ color: 'var(--cor-texto-fraco)' }}>{vencendo.length}</small></h2>
+        <h2 id="t-vencendo" className={s.titulo}>Vencendo nas próximas 4 horas <span className={s.contagem}>{vencendo.length}</span></h2>
         <VencendoEmBreve chamados={vencendo} usuarios={usuarios} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} />
       </section>
       <section className={s.secao} aria-labelledby="t-semdono">
-        <h2 id="t-semdono" className={s.titulo}>Fila sem dono <small style={{ color: 'var(--cor-texto-fraco)' }}>{semDono.length}</small></h2>
+        <h2 id="t-semdono" className={s.titulo}>Fila sem dono <span className={s.contagem}>{semDono.length}</span></h2>
         <FilaSemDono chamados={semDono} consultores={consultores} grupos={grupos} usuarios={usuarios} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} />
       </section>
     </div>

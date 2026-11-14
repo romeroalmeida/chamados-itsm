@@ -1,4 +1,5 @@
 import type { ResumoAlerta } from '@/shared/utils/sla'
+import s from './FaixaAlerta.module.css'
 
 interface Props { resumo: ResumoAlerta; onFiltrar?: (qual: 'vencidos' | 'proximaHora') => void; sufixo?: string }
 
@@ -9,9 +10,10 @@ export function FaixaAlerta({ resumo, onFiltrar, sufixo = 'seus' }: Props) {
   if (resumo.proximaHora) partes.push({ texto: `${resumo.proximaHora} ${resumo.proximaHora === 1 ? 'chamado' : 'chamados'} ${sufixo} ${resumo.proximaHora === 1 ? 'vence' : 'vencem'} na próxima hora`, qual: 'proximaHora' })
   if (resumo.vencidos) partes.push({ texto: `${resumo.vencidos} já ${resumo.vencidos === 1 ? 'venceu' : 'venceram'}`, qual: 'vencidos' })
   return (
-    <div role="status" style={{ background: resumo.vencidos ? 'var(--sla-vencido)' : 'var(--sla-ultima-hora)', color: '#fff', padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', fontWeight: 600 }}>
+    <div role="status" className={s.faixa}>
+      <span className={s.ponto} aria-hidden />
       {partes.map((p) => onFiltrar
-        ? <button key={p.qual} onClick={() => onFiltrar(p.qual)} style={{ background: 'transparent', border: 0, color: 'inherit', fontWeight: 'inherit', textDecoration: 'underline', padding: 0 }}>{p.texto}</button>
+        ? <button key={p.qual} type="button" className={s.filtro} onClick={() => onFiltrar(p.qual)}>{p.texto}</button>
         : <span key={p.qual}>{p.texto}</span>)}
     </div>
   )
