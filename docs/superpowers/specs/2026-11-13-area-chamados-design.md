@@ -1,7 +1,8 @@
 # Área de chamados (ITSM) — design
 
-Data: 2026-11-13. Teste técnico Frontend React. Enunciado e `dados.json` em
-`material/` (copiados do pacote recebido em 04/11/2026).
+Data: 2026-11-13, revisado em 2026-11-14. Teste técnico Frontend React.
+Enunciado e `dados.json` em `material/` (copiados do pacote recebido em
+04/11/2026).
 
 ## 1. Objetivo
 
@@ -9,14 +10,16 @@ Construir a área de chamados de um ITSM, em React, vista por três perfis
 (consultora, gestor, cliente), com atualização em tempo real. O avaliador quer
 ver **o que aparece na tela, quando e para quem**. Identidade visual não conta.
 
-Requisitos obrigatórios do enunciado:
+Requisitos obrigatórios do enunciado e onde são atendidos:
 
-1. Abrir um chamado.
-2. Encontrar um chamado e ver conversa, status, responsável e prazo.
-3. Pegar um chamado para atender.
-4. Trocar mensagens no chamado.
-5. Mudar status registrando motivo. Chamado fechado pode ser reaberto.
-6. Acompanhar a situação de um grupo de consultores.
+| # | Requisito | Seções |
+|---|---|---|
+| 1 | Abrir um chamado | §5.3, §7 |
+| 2 | Encontrar um chamado e ver conversa, status, responsável, prazo | §5.1, §5.4 |
+| 3 | Pegar um chamado para atender | §5.1, §6.3 |
+| 4 | Trocar mensagens | §4.1, §5.4 |
+| 5 | Mudar status com motivo; reabrir fechado | §6.1 |
+| 6 | Acompanhar um grupo de consultores | §5.2 |
 
 Tudo em tempo real: ações de outras pessoas aparecem na tela sem recarregar.
 
@@ -27,16 +30,19 @@ Fatos do `dados.json` que moldam o design:
 | Fato | Consequência |
 |---|---|
 | 620 chamados, 3.381 mensagens, 1.558 itens de histórico | listas virtualizadas; `dados.json` (1,9 MB) fora do bundle inicial |
-| 1 chamado com 1.500 mensagens, todos os outros ≤ 11 | conversa virtualizada; é o caso de teste de performance |
+| 1 chamado com 1.500 mensagens, todos os outros ≤ 11 | conversa virtualizada com altura variável; é o caso de teste de performance |
 | 48 usuários: 1 gestor, 12 consultores (6 por grupo), 35 clientes | o gestor gere os dois grupos |
-| Marina Almeida tem 42 chamados abertos | bate com o enunciado; é a persona consultora |
-| Helena Fernandes: `pt-PT`, `Europe/Lisbon` | datas no fuso e locale do usuário logado |
+| Marina Almeida tem 42 chamados ativos | bate com o enunciado; é a persona consultora |
+| Helena Fernandes: `pt-PT`, `Europe/Lisbon`; par #10612 (fechado) / #10614 (aberto) com mesmo título | datas no fuso e locale do usuário; caso real da similaridade |
 | `meta.agora` = 2026-11-03T13:00:00Z | relógio virtual parte daí |
 | Em `agora`: 147 vencidos, 43 vencem em 4h, 76 pausados, 196 sem primeira resposta | faixas de SLA e ordenação "estoura primeiro" |
 | `sla_pausado` = true exatamente nos 76 `aguardando_cliente` | pausa do SLA é derivada do status |
 | 82 pares (solicitante, título) repetidos | base para sugerir reabertura à Helena |
-| Histórico: 559 atribuições, 999 mudanças de status, 1 reabertura `fechado → em_atendimento` | tabela de transições (§6) |
+| Histórico: 559 atribuições, cada uma acompanhada de um `aberto → em_atendimento`; 1 reabertura `fechado → em_atendimento` | atribuir emite dois eventos (§4.1); tabela de transições (§6.1) |
+| `historico.tipo = "atribuicao"` tem `de`/`para` nulos e `usuario_id` = consultor que **recebeu** | mapeamento do `reducer` (§4.6) |
+| Chamados reabertos mantêm `fechado_em`/`resolvido_em` preenchidos (ex.: #10611) | toda derivação usa `status`, nunca essas datas |
 | Mensagens: `interna` é `true` em 495 e `null` nas demais | tratar `null` como não interna |
+| `usuarios`: consultor tem `grupo_id`, gestor tem `grupos_ids`, cliente tem `empresa` | `Usuario` é união discriminada por `perfil` |
 
 Status possíveis: `aberto`, `em_atendimento`, `aguardando_cliente`, `resolvido`,
 `fechado`. Prioridades: `baixa`, `media`, `alta`, `critica`. SLA por prioridade
@@ -49,9 +55,11 @@ baixa 24/72.
 |---|---|---|
 | Stack | React 19, Vite, TS estrito, TanStack Query v5, Zustand, React Router v7, CSS Modules + custom properties, Radix UI primitives, MSW, Vitest + Testing Library, pnpm | Next.js (sem backend, vira peso); Tailwind + shadcn (volume de estilo pequeno não justifica mais uma ferramenta) |
 | Troca de perfil | login fake: e-mail + PIN de 6 dígitos, PIN padrão `123456` para todos; link "quem posso ser?" lista os três e-mails | cards de persona; rota por perfil |
-| Tempo real | barramento `BroadcastChannel` compartilhado entre abas + simulador de fundo; ~1 em 10 eventos reenviado de propósito | só simulador; só multi-aba |
-| Relógio | virtual: nasce em `meta.agora`, avança em tempo real; `useNow()` é a única fonte de "agora" | relógio real com datas deslocadas; relógio real puro (100% vencido) |
-| Persistência | `dados.json` + log append-only de eventos em `localStorage`; toda aba reconstrói o estado aplicando o log; botão "resetar dados" | só memória; estado derivado em IndexedDB |
+| Tempo real | barramento `BroadcastChannel` entre abas + simulador de fundo em uma aba só; ~1 em 10 eventos reenviado de propósito | só simulador; só multi-aba |
+| Relógio | virtual: nasce em `meta.agora`, avança com velocidade ajustável; `useNow()` é a única fonte de "agora" | relógio real com datas deslocadas; relógio real puro (100% vencido) |
+| Persistência | `dados.json` + log de eventos em `localStorage`, uma chave por evento; toda aba reconstrói o estado aplicando o log | só memória; estado derivado em IndexedDB |
+| Reducer | burro: aplica exatamente o evento recebido; eventos derivados (status automático) são emitidos pelo handler | reducer que infere efeitos colaterais |
+| Agregados do gestor | calculados no cliente a partir do cache de chamados e histórico | endpoint `/equipe` (exigiria invalidação a cada evento) |
 | Escopo | 6 obrigatórios + dores das personas (§5) | só os 6 |
 | Datas | `Intl.DateTimeFormat` com `locale` e `zoneinfo` do usuário | biblioteca de datas |
 
@@ -66,77 +74,83 @@ Feature-first, conforme a skill `front-architecture`.
 src/
 ├── app/
 │   ├── routes/            # rotas + guarda por perfil
-│   ├── providers/         # QueryProvider, RelogioProvider, SessaoProvider
+│   ├── providers/         # QueryProvider, RelogioProvider
 │   └── layout/            # casca: topo com usuário, sair, painel do simulador
 ├── api/
 │   ├── apiClient.ts       # fetch tipado; não-2xx vira ApiError
 │   ├── realtime.ts        # assina o socket, dedupe por id, setQueryData
-│   └── queries/           # TanStack Query: chamados, mensagens, usuarios, equipe
+│   └── queries/           # TanStack Query: chamados, mensagens, historico, usuarios, lookups
 ├── features/
 │   ├── auth/              # login (e-mail + PIN), "quem posso ser?"
 │   ├── chamados/          # fila, detalhe, conversa, abrir, pegar, status, reabrir
 │   └── equipe/            # painel do gestor: carga, SLA, redistribuir, ocioso
 ├── shared/
-│   ├── components/        # Button, Badge, Dialog/Select/Tooltip (Radix), ListaVirtual
-│   ├── hooks/             # useNow(), useFusoDoUsuario()
-│   ├── utils/             # sla.ts, status.ts, datas.ts, similaridade.ts
+│   ├── components/        # Button, Badge, Dialog/Select/Tooltip (Radix), ListaVirtual, Toast
+│   ├── hooks/             # useNow(), useFusoDoUsuario(), useUltimaVisita()
+│   ├── utils/             # reducer.ts, sla.ts, status.ts, datas.ts, similaridade.ts, equipe.ts
 │   ├── styles/            # tokens.css, reset.css
-│   └── types/             # Chamado, Mensagem, Usuario, Grupo, Evento…
-├── state/                 # Zustand: sessão (usuário logado), filtros de UI
+│   └── types/             # Chamado, Mensagem, Historico, Usuario (união), Grupo, Evento…
+├── state/                 # Zustand: sessão (usuário logado), filtros de UI, simulador
 ├── mock-server/           # o "backend": importado só em main.tsx
-│   ├── db.ts              # dados.json + replay do log → estado atual
-│   ├── reducer.ts         # aplica um Evento ao estado (compartilhado com o app)
-│   ├── eventLog.ts        # append-only em localStorage
-│   ├── bus.ts             # BroadcastChannel entre abas
-│   ├── handlers.ts        # MSW: rotas REST
+│   ├── db.ts              # dados.json + replay do log → estado atual; assina o bus
+│   ├── eventLog.ts        # uma chave por evento em localStorage
+│   ├── bus.ts             # BroadcastChannel entre abas (fallback: evento `storage`)
+│   ├── handlers.ts        # MSW: rotas REST; validação; emissão de eventos
 │   ├── socket.ts          # emissor de eventos para o app
-│   └── simulator.ts       # movimento de fundo + duplicatas propositais
+│   └── simulator.ts       # movimento de fundo + duplicatas; roda em uma aba
 ├── tests/                 # setup do Vitest, fixtures recortadas do dados.json
 └── main.tsx
 ```
 
 Regras:
 
-- `equipe` e `chamados` não se importam. O comum (tipos, queries, SLA, status)
-  vive em `api/queries/` e `shared/`.
+- `equipe` e `chamados` não se importam. O comum (tipos, queries, SLA, status,
+  agregados) vive em `api/queries/` e `shared/`.
 - `mock-server/` só entra em `main.tsx`. O app fala com ele por HTTP (MSW) e
   pelo contrato de `socket.ts`. Trocar por backend real: apagar a pasta e
   apontar `apiClient` para a URL.
-- `reducer.ts` fica em `mock-server/` mas é puro e sem dependência; o app o
-  importa via `shared/utils/` re-export para aplicar eventos no cache. Mesma
-  função nos dois lados: cliente e servidor concordam por construção.
+- `shared/utils/reducer.ts` é puro e sem dependência. `mock-server/db.ts` e
+  `api/realtime.ts` usam a mesma função: cliente e servidor concordam por
+  construção.
 - Path alias `@/`. Barrel `index.ts` por feature.
 
 ### 4.1 Contrato HTTP (MSW)
 
-| Método | Rota | Corpo | Evento gerado |
-|---|---|---|---|
-| POST | `/auth/entrar` | `{ email, pin }` | — (retorna `Usuario`) |
-| GET | `/me` | — | — |
-| GET | `/usuarios`, `/grupos`, `/categorias`, `/sla` | — | — |
-| GET | `/chamados?perfil=…` | — | — (filtra pelo usuário da sessão; §7) |
-| GET | `/chamados/:id` | — | — (inclui mensagens e histórico) |
-| POST | `/chamados` | `{ titulo, descricao, categoria_id }` | `chamado.aberto` |
-| POST | `/chamados/:id/mensagens` | `{ texto, interna }` | `mensagem.adicionada` (+ `status.alterado` automático se cliente responde em `aguardando_cliente`) |
-| POST | `/chamados/:id/atribuir` | `{ consultor_id }` | `chamado.atribuido` |
-| POST | `/chamados/:id/status` | `{ para, motivo }` | `status.alterado` |
-| GET | `/equipe` | — | — (agregados por consultor; §5.2) |
-
-Sessão: `POST /auth/entrar` devolve o usuário; o id vai para o store de sessão e
+Sessão: `POST /auth/entrar` devolve o `Usuario`; o id vai para o store Zustand e
 segue em header `X-Usuario-Id`. Sem token: é fake e documentado.
 
-Erros: `400` validação (motivo vazio, transição inválida), `403` perfil sem
-permissão, `404` não existe, `409` conflito (pegar chamado já pego). Corpo
-`{ codigo, mensagem }`.
+| Método | Rota | Corpo | Resposta | Eventos emitidos |
+|---|---|---|---|---|
+| POST | `/auth/entrar` | `{ email, pin }` | `Usuario` | — |
+| GET | `/usuarios`, `/grupos`, `/categorias`, `/sla` | — | listas | — |
+| GET | `/chamados` | — | `Chamado[]` visíveis ao usuário (§7) | — |
+| GET | `/chamados/:id` | — | `{ chamado, mensagens, historico }` filtrado por perfil | — |
+| GET | `/historico` | — | `Historico[]` dos chamados visíveis (gestor e consultor) | — |
+| POST | `/chamados` | `{ titulo, descricao, categoria_id, solicitante_id? }` | `{ id }` | `chamado.aberto` |
+| POST | `/chamados/:id/mensagens` | `{ texto, interna }` | `{ ok }` | `mensagem.adicionada`; **mais** `status.alterado` (`aguardando_cliente → em_atendimento`, motivo "Cliente respondeu") se autor é cliente e status era `aguardando_cliente` |
+| POST | `/chamados/:id/atribuir` | `{ consultor_id }` | `{ ok }` | `chamado.atribuido`; **mais** `status.alterado` (`aberto → em_atendimento`, motivo automático) se status era `aberto`. Em `em_atendimento`/`aguardando_cliente` (redistribuição) só o primeiro |
+| POST | `/chamados/:id/status` | `{ para, motivo }` | `{ ok }` | `status.alterado` |
+
+`solicitante_id` só é aceito de consultor (abrir em nome de cliente); para
+cliente é ignorado e forçado ao próprio id; gestor não abre chamado (`403`).
+
+Motivos automáticos são preenchidos pelo **servidor**: "Assumido para
+atendimento" (consultor pega), "Atribuído por {gestor}", "Cliente respondeu",
+"Confirmado pelo cliente" (resolvido → fechado via botão do cliente). Nas demais
+transições `motivo` é obrigatório e vazio dá `400`.
+
+Erros: `400` validação (motivo vazio, transição inválida, campo faltando),
+`401` sem sessão ou PIN errado, `403` perfil sem permissão, `404` não existe,
+`409` conflito (pegar chamado já com responsável). Corpo `{ codigo, mensagem }`.
 
 ### 4.2 Contrato do socket
 
 ```ts
 type Evento =
-  | { id: string; tipo: 'chamado.aberto';     ocorrido_em: string; payload: Chamado }
-  | { id: string; tipo: 'chamado.atribuido';  ocorrido_em: string; payload: { chamado_id: string; consultor_id: string } }
-  | { id: string; tipo: 'mensagem.adicionada';ocorrido_em: string; payload: Mensagem }
-  | { id: string; tipo: 'status.alterado';    ocorrido_em: string; payload: { chamado_id: string; de: Status; para: Status; motivo: string; usuario_id: string } }
+  | { id: string; tipo: 'chamado.aberto';      ocorrido_em: string; payload: Chamado }
+  | { id: string; tipo: 'chamado.atribuido';   ocorrido_em: string; payload: { chamado_id: string; consultor_id: string } }
+  | { id: string; tipo: 'mensagem.adicionada'; ocorrido_em: string; payload: Mensagem }
+  | { id: string; tipo: 'status.alterado';     ocorrido_em: string; payload: { chamado_id: string; de: Status; para: Status; motivo: string; usuario_id: string } }
 
 interface Socket {
   assinar(cb: (e: Evento) => void): () => void   // retorna unsubscribe
@@ -144,45 +158,80 @@ interface Socket {
 }
 ```
 
-Formato igual ao do enunciado. Um mesmo evento pode chegar mais de uma vez.
+Formato exatamente igual ao do enunciado, sem campos extras. Um mesmo evento
+pode chegar mais de uma vez.
 
-### 4.3 Fluxo de uma ação
+### 4.3 Fluxo de uma ação e sincronização entre abas
 
-1. Tela chama mutation → `POST` → MSW.
-2. Handler valida com o estado atual do `db`, cria o evento com `ocorrido_em`
-   do relógio virtual, grava em `eventLog`, aplica em `db` via `reducer`,
-   publica no `bus`.
-3. `bus` entrega a todas as abas, inclusive a origem. `socket.ts` repassa.
+1. Tela chama mutation → `POST` → MSW da aba de origem.
+2. Handler valida contra o `db` local, cria os eventos com `ocorrido_em` do
+   relógio virtual, **grava cada um no `eventLog`** (só a aba de origem grava),
+   aplica no `db` via `reducer`, publica no `bus`.
+3. `bus` entrega a todas as abas, inclusive a origem. Em cada aba, dois
+   assinantes: `db.ts` (aplica no `db` daquela aba, com dedupe por `id`) e
+   `socket.ts` (repassa ao app). Assim o handler de qualquer aba valida contra
+   estado atualizado.
 4. `realtime.ts` ignora `id` já visto (Set em memória), aplica o evento no cache
    do TanStack Query com `setQueryData` usando o mesmo `reducer`.
 
-Não há atualização otimista separada: a resposta do POST é só `{ ok }`; a tela
-muda quando o evento chega, que é imediato porque o `bus` entrega localmente.
-Um caminho só para dado mudar.
+Não há atualização otimista separada; a tela muda quando o evento chega, que é
+imediato porque o `bus` entrega localmente. Um caminho só para dado mudar.
+
+`eventLog`: uma chave por evento, `itsm:evt:<ocorrido_em>:<id>`, valor = o
+evento. Replay ordena pela chave. Sem read-modify-write, duas abas gravando ao
+mesmo tempo não perdem nada. Chave `itsm:relogio` guarda o relógio (§4.5).
+
+Fallback: sem `BroadcastChannel`, o `bus` escuta o evento `storage` do
+`localStorage`, que dispara nas outras abas quando uma chave de evento é gravada.
 
 ### 4.4 Simulador
 
-Ligado por padrão. Painel discreto no rodapé: pausar/retomar, velocidade
-(1x, 5x, 20x), "disparar evento agora", "resetar dados", contador de eventos
-recebidos e de duplicatas descartadas.
+Roda em **uma aba só**: a que obtém `navigator.locks.request('itsm:simulador')`.
+Se a aba fecha, a próxima que pedir o lock assume. Sem `navigator.locks`
+(ambiente antigo), roda em toda aba e o painel avisa.
 
-A cada intervalo (base 8 s em 1x) escolhe uma ação plausível:
+Ligado por padrão. Painel discreto no rodapé: pausar/retomar, velocidade (1x,
+5x, 20x), "disparar evento agora", "resetar dados", contador de eventos
+recebidos e de duplicatas descartadas, indicador "esta aba simula / outra aba
+simula". Estado (ligado, velocidade) em `localStorage` para valer em todas as
+abas.
+
+A cada intervalo (base 8 s em 1x, dividido pela velocidade) escolhe uma ação
+plausível e a executa **pelos mesmos handlers HTTP** da §4.1, como se fosse um
+usuário em outra aba:
 
 - cliente responde em chamado `aguardando_cliente` ou `em_atendimento`;
 - consultor pega chamado da fila sem dono do próprio grupo;
 - consultor muda status (`em_atendimento → aguardando_cliente | resolvido`);
 - cliente abre chamado novo (menos frequente).
 
-Passa pelo mesmo caminho da §4.3, como se fosse outra aba. ~10% dos eventos são
-publicados duas vezes.
+~10% dos eventos são publicados duas vezes no `bus`.
 
 ### 4.5 Relógio virtual
 
-`RelogioProvider` guarda `inicioVirtual = meta.agora` e `inicioReal =
-Date.now()` na primeira carga (persistido no `localStorage` junto do log, para
-sobreviver a reload e a abas). `agora() = inicioVirtual + (Date.now() −
-inicioReal)`. `useNow()` reavalia a cada 30 s. O `mock-server` usa a mesma
-função para carimbar eventos. "Resetar dados" zera também o relógio.
+`itsm:relogio = { inicioVirtual: meta.agora, inicioReal: Date.now(), velocidade }`
+gravado na primeira carga. `agora() = inicioVirtual + (Date.now() − inicioReal)
+× velocidade`. A velocidade do simulador **acelera também o relógio**: em 20x
+um prazo de 2h estoura em 6 min, visível na demo. Mudar a velocidade reancora
+(`inicioVirtual = agora()`, `inicioReal = Date.now()`) para não dar salto.
+`useNow()` reavalia a cada 30 s reais (ou 5 s em 20x). O `mock-server` usa a
+mesma função para carimbar eventos. "Resetar dados" apaga as chaves `itsm:*` e
+recarrega: volta ao `dados.json` puro.
+
+### 4.6 Reducer
+
+`aplicar(estado, evento): estado`. Puro. Ignora `id` já aplicado (conjunto de
+ids no estado).
+
+| Evento | Efeito |
+|---|---|
+| `chamado.aberto` | insere o chamado |
+| `chamado.atribuido` | `responsavel_id = consultor_id`, `atualizado_em = ocorrido_em`; **acrescenta** `historico { tipo: 'atribuicao', de: null, para: null, usuario_id: consultor_id, motivo: null }`. Último evento vence (fonte de verdade é o servidor, que barra o conflito com `409`) |
+| `mensagem.adicionada` | insere a mensagem; `atualizado_em`; se autor é consultor/gestor, `interna` falsa e `primeira_resposta_em` nulo → preenche com `criada_em` |
+| `status.alterado` | `status = para`, `atualizado_em`; `sla_pausado = (para === 'aguardando_cliente')`; `resolvido_em` ao entrar em `resolvido`, `fechado_em` ao entrar em `fechado` (não limpa ao reabrir, como no dado); **acrescenta** `historico { tipo: 'status', de, para, motivo, usuario_id }` |
+
+Status nunca muda por `chamado.atribuido` nem por `mensagem.adicionada`; o
+handler emite o `status.alterado` correspondente (§4.1).
 
 ## 5. Telas
 
@@ -190,8 +239,9 @@ função para carimbar eventos. "Resetar dados" zera também o relógio.
 
 E-mail, PIN de 6 dígitos, botão entrar. Link "quem posso ser?" abre lista com
 Marina, Ricardo e Helena (nome, perfil, e-mail). Após entrar, redireciona para a
-rota inicial do perfil. Rotas protegidas: sem sessão volta ao login; perfil
-errado para a rota recebe "sem acesso" com link para a tela dele.
+rota inicial do perfil e grava "última visita = agora" se não existir. Rotas
+protegidas: sem sessão volta ao login; perfil errado recebe "sem acesso" com
+link para a tela dele.
 
 ### 5.1 Consultora — `/fila` (Marina)
 
@@ -200,13 +250,16 @@ fila vira a tela e o chamado abre por cima).
 
 Fila:
 
-- Abas "Meus" e "Do grupo, sem dono", com contadores.
-- Ordenação padrão **estoura primeiro**: menor `prazo − agora` no topo,
-  considerando o prazo relevante (primeira resposta se ainda não houve, senão
-  resolução). Vencidos primeiro, depois críticos. Pausados vão para o fim.
+- Abas "Meus" e "Do grupo, sem dono", com contadores. "Meus" lista por padrão
+  só ativos (`aberto`, `em_atendimento`, `aguardando_cliente`); o filtro de
+  status permite incluir `resolvido`/`fechado`.
+- Ordenação padrão **estoura primeiro**: menor `prazoRelevante − agora` (§6.2)
+  no topo. Vencidos primeiro, depois críticos, atenção, ok; pausados depois;
+  resolvidos/fechados por último, mais recente primeiro.
 - Linha: número, título, nome do cliente, status, badge de prazo ("vence em
   1h 40", "venceu há 3h", "pausado"), ponto azul se há mensagem nova desde a
-  última vez que ela abriu o chamado (gravado por chamado no `localStorage`).
+  última vez que ela abriu o chamado (`useUltimaVisita`, por chamado, em
+  `localStorage`; sem registro = sem ponto).
 - Filtro por status; busca por número ou texto do título.
 - Ordenações alternativas: mais recente, cliente.
 
@@ -219,21 +272,20 @@ lá. Se a caixa está vazia e ela está no fim, rola normalmente.
 
 ### 5.2 Gestor — `/equipe` (Ricardo)
 
-- **Cartões por consultor**, dos grupos que ele gere: abertos, vencidos,
-  vencendo em 4h, e **tempo ocioso nos últimos 7 dias** (soma dos intervalos em
-  que o consultor não tinha nenhum chamado em `em_atendimento` ou
-  `aguardando_cliente`, reconstruído do histórico de atribuição e de status).
-  Ordenado por vencidos desc, depois abertos desc. Quem está com zero aparece em
+Todos os agregados são calculados no cliente, em `shared/utils/equipe.ts`, a
+partir de `GET /chamados` e `GET /historico` (o gestor recebe tudo dos grupos
+dele). Mudam sozinhos quando o cache muda por evento.
+
+- **Cartões por consultor**, dos grupos que ele gere: ativos, vencidos,
+  vencendo em 4h, e **tempo ocioso nos últimos 7 dias** (§6.5). Ordenado por
+  vencidos desc, depois ativos desc. Quem está com zero ativo aparece em
   destaque "sem chamado".
 - Clicar no cartão lista os chamados dele com seleção múltipla e botão
   **Redistribuir para…** (select de consultor do mesmo grupo). Um
-  `chamado.atribuido` por chamado.
+  `POST /atribuir` por chamado.
 - **Fila sem dono** dos grupos dele, com select de consultor na linha.
 - **Vencendo nas próximas 4h**, cruzando os dois grupos, ordenada por prazo.
 - Clicar num chamado abre o detalhe (§5.4) com ações de gestor.
-
-`GET /equipe` devolve os agregados já calculados; o cálculo vive em
-`shared/utils/` para o teste cobrir.
 
 ### 5.3 Cliente — `/meus-chamados` (Helena)
 
@@ -241,35 +293,41 @@ Linguagem de cliente. Nunca aparecem: categoria interna, grupo, prioridade,
 nota interna, nome de consultor fora do contexto "quem está atendendo".
 
 - **Novidades desde sua última visita**: faixa no topo com uma linha por
-  chamado que mudou ("Rafael respondeu", "Resolvido, confirme"). Última visita
-  por usuário no `localStorage`; ao fechar a faixa, atualiza.
+  chamado com `atualizado_em` posterior à última visita ("Rafael respondeu",
+  "Resolvido, confirme"). Ao fechar a faixa, última visita = agora. Primeira
+  visita: faixa não aparece.
 - Lista: título, situação em linguagem dela (`aberto` → "aguardando
   atendimento"; `em_atendimento` → "em atendimento por Rafael";
   `aguardando_cliente` → "aguardando sua resposta"; `resolvido` → "resolvido,
   aguardando sua confirmação"; `fechado` → "fechado"), e "previsão de resposta
-  até terça, 14h" no fuso dela, só enquanto faz sentido (aberto sem primeira
-  resposta → prazo de primeira resposta; em atendimento → prazo de resolução;
-  pausado/resolvido/fechado → nada).
+  até terça, 14h" no fuso dela, usando o **prazo relevante da §6.2**; nada
+  quando pausado, resolvido ou fechado.
 - **Abrir chamado** (`/meus-chamados/novo`): "O que parou?" (select com as 8
   categorias em nome amigável), título, descrição. Prioridade: `media` por
   padrão, `alta` se a categoria for Acesso e senhas ou Rede e VPN (regra interna
   simples, documentada). Enquanto digita o título: "Parece com seu chamado
-  #10231 (fechado em 12/10). É o mesmo problema?" com **Reabrir** (vai para o
-  chamado e dispara reabertura com motivo "Cliente reabriu: problema voltou") ou
-  **É outro** (segue). Regra em §6.4.
-- Detalhe (§5.4) com ações de cliente: responder, "Resolvido? Confirmar"
-  (→ `fechado`), "Ainda não resolveu" (→ reabre), reabrir chamado fechado.
+  #10612 (fechado em 12/10). É o mesmo problema?" com **Reabrir** ou **É
+  outro**. Reabrir navega para o chamado e abre o diálogo de reabertura (§5.4)
+  com o motivo pré-preenchido pela descrição digitada; ao confirmar, a
+  descrição também vai como mensagem. Regra em §6.4.
+- Detalhe (§5.4) com ações de cliente: responder; "Resolvido? Confirmar"
+  (→ `fechado`, motivo automático); "Ainda não resolveu" e "Reabrir" (ambos
+  → `em_atendimento`) abrem diálogo com campo "Conte o que aconteceu",
+  obrigatório, que vira o `motivo`.
 
 ### 5.4 Detalhe de chamado — `/chamados/:id` (compartilhado)
 
 Um componente, três visões. Cabeçalho: número, título, status, responsável,
 prazo (badge de SLA para equipe; "previsão" para cliente), cliente e empresa
-(equipe). Conversa virtualizada, ordem cronológica, autor e hora no fuso do
-usuário; notas internas com fundo distinto e rótulo "só a equipe vê", ocultas
-para cliente. Histórico de status com motivos: equipe vê tudo em aba
-"Histórico"; cliente vê os passos resumidos no topo da conversa. Caixa de
-resposta com alternância "Resposta / Nota interna" (equipe) ou só resposta
-(cliente). Menu de ações filtrado por §6.1 e §7.
+(equipe), "reaberto em {data}" se há `status.alterado` saindo de
+`resolvido`/`fechado` no histórico. Conversa virtualizada (`measureElement`
+para altura variável), ordem cronológica, autor e hora no fuso do usuário;
+notas internas com fundo distinto e rótulo "só a equipe vê", ocultas para
+cliente. Histórico de status com motivos: equipe vê tudo em aba "Histórico";
+cliente vê os passos resumidos no topo da conversa. Caixa de resposta com
+alternância "Resposta / Nota interna" (equipe) ou só resposta (cliente). Menu
+de ações filtrado por §6.1 e §7; toda ação com motivo abre diálogo (Radix)
+com campo obrigatório.
 
 ## 6. Regras de domínio
 
@@ -277,70 +335,75 @@ resposta com alternância "Resposta / Nota interna" (equipe) ou só resposta
 
 | De | Para | Quem | Motivo |
 |---|---|---|---|
-| aberto | em_atendimento | consultor pega; gestor atribui | automático: "Assumido para atendimento" / "Atribuído por {gestor}" |
+| aberto | em_atendimento | consultor pega; gestor atribui (via `/atribuir`) | automático pelo servidor |
 | em_atendimento | aguardando_cliente | consultor | obrigatório |
-| aguardando_cliente | em_atendimento | automático quando cliente responde; consultor | automático: "Cliente respondeu" / obrigatório |
+| aguardando_cliente | em_atendimento | automático quando cliente responde; consultor | automático / obrigatório |
 | em_atendimento | resolvido | consultor | obrigatório |
-| resolvido | fechado | cliente confirma; consultor | automático: "Confirmado pelo cliente" / obrigatório |
-| resolvido, fechado | em_atendimento | qualquer perfil (reabertura) | obrigatório |
+| resolvido | fechado | cliente confirma; consultor | automático / obrigatório |
+| resolvido, fechado | em_atendimento | qualquer perfil (reabertura) | obrigatório (cliente digita no diálogo) |
 
 Tabela em `shared/utils/status.ts`: `transicoesPermitidas(status, perfil)`.
 Fora da tabela, a ação não aparece; se chegar ao servidor, `400`.
 
-Reabertura de chamado sem responsável atual (consultor saiu) volta para
-`aberto` em vez de `em_atendimento`. Reabrir **não recria prazo**: mantém os
-originais e o detalhe mostra "reaberto em {data}". Decisão documentada.
+Reabrir **não recria prazo**: mantém os originais e o detalhe mostra "reaberto
+em {data}". Decisão documentada. Defesa do `reducer`: reabertura de chamado sem
+`responsavel_id` (não ocorre no dado) vai para `aberto`.
 
 ### 6.2 SLA
 
-- Prazo relevante: `prazo_primeira_resposta` enquanto `primeira_resposta_em`
-  for nulo; depois `prazo_resolucao`.
-- Primeira resposta = primeira mensagem não interna de autor consultor/gestor.
-  O servidor preenche `primeira_resposta_em` ao aplicar `mensagem.adicionada`.
+- `prazoRelevante`: `prazo_primeira_resposta` enquanto `primeira_resposta_em`
+  for nulo; depois `prazo_resolucao`. Vale para badge, ordenação e "previsão".
+- Primeira resposta = primeira mensagem não interna de autor consultor/gestor
+  (`reducer`, §4.6).
 - `aguardando_cliente` ⇒ `sla_pausado = true`; sai do cálculo de vencidos.
   Voltar para `em_atendimento` despausa. Não há extensão de prazo pelo tempo
   pausado (simplificação documentada).
-- Faixas em `sla.ts`: `vencido` (< 0), `critico` (≤ 4h), `atencao` (≤ 24h),
-  `ok`, `pausado`, `encerrado` (resolvido/fechado). Tokens CSS por faixa.
+- Faixas em `sla.ts`: `encerrado` se `status ∈ {resolvido, fechado}`;
+  `pausado` se `sla_pausado`; senão por `prazoRelevante − agora`: `vencido`
+  (< 0), `critico` (≤ 4h), `atencao` (≤ 24h), `ok`. Tokens CSS por faixa.
+  Só `status` decide "encerrado"; `resolvido_em`/`fechado_em` nunca.
 - Chamado novo: prazos = `aberto_em` + horas do SLA da prioridade.
 
 ### 6.3 Pegar chamado e concorrência
 
-Só chamado sem responsável, do grupo do consultor. `reducer` ignora
-`chamado.atribuido` quando o chamado já tem responsável **e** o evento não é de
-gestor (payload carrega `atribuido_por` opcional para distinguir). O servidor
-responde `409` "Rafael pegou antes de você". Como o `db` é um por aba e as abas
-disputam pelo `bus`, a regra no `reducer` garante o mesmo resultado em todas.
+Só chamado sem responsável, do grupo do consultor. O handler valida contra o
+`db` da aba, que já aplicou os eventos das outras abas (§4.3); se já há
+responsável, `409` "Rafael pegou antes de você". No `reducer`, último
+`chamado.atribuido` vence; a janela em que duas abas passam na validação ao
+mesmo tempo é de milissegundos e aceita como limite do fake (comentada no
+código).
 
 ### 6.4 Similaridade (Helena)
 
 Candidatos: chamados do mesmo solicitante com status `resolvido` ou `fechado`
-nos últimos 90 dias (relógio virtual). Normaliza título (minúsculas, sem
-acento, sem stopwords pt). Sugere o mais recente com ≥ 2 palavras em comum ou
-título idêntico. Uma sugestão só.
+e `atualizado_em` nos últimos 90 dias (relógio virtual). Normaliza título
+(minúsculas, sem acento, sem stopwords pt). Sugere o mais recente com ≥ 2
+palavras em comum ou título idêntico. Uma sugestão só.
 
 ### 6.5 Tempo ocioso (Ricardo)
 
-Janela: últimos 7 dias até `agora`. Para cada consultor, constrói a linha do
-tempo de "tem pelo menos um chamado ativo" (`em_atendimento` ou
-`aguardando_cliente` atribuído a ele) a partir de `historico` (atribuições e
-status) e do estado atual. Ocioso = soma dos intervalos sem nenhum ativo,
-limitado à janela. Exibido como "3h 20 ocioso na semana".
+Janela: últimos 7 dias até `agora`. Para cada consultor, reconstrói do
+`historico` (atribuições e status, ordenado por `ocorrido_em`) e do estado
+atual a linha do tempo "tem pelo menos um chamado ativo" (`em_atendimento` ou
+`aguardando_cliente` atribuído a ele). Ocioso = soma dos intervalos sem nenhum
+ativo, limitado à janela. Exibido como "3h 20 ocioso na semana". Função
+`ociosoNaJanela(consultorId, historico, chamados, agora)` em `equipe.ts`.
 
 ## 7. Permissões
 
 | Ação / visão | Cliente | Consultor | Gestor |
 |---|---|---|---|
 | Ver chamado | só os próprios | do próprio grupo | dos grupos que gere |
-| Ver nota interna, categoria, grupo, prioridade | não | sim | sim |
-| Abrir chamado | sim | sim (em nome de cliente: select de solicitante) | não |
+| Ver nota interna, categoria, grupo, prioridade, histórico completo | não | sim | sim |
+| Abrir chamado | sim | sim (em nome de cliente: `solicitante_id`) | não |
 | Pegar | não | sim, sem dono, do grupo | não |
 | Atribuir/redistribuir | não | não | sim |
 | Responder | sim | sim | sim (fora da rotina, não bloqueado) |
 | Nota interna | não | sim | sim |
-| Mudar status | só confirmar/reabrir | conforme §6.1 | conforme §6.1 |
+| Mudar status | confirmar, "ainda não resolveu", reabrir | conforme §6.1 | conforme §6.1 |
 
-`GET /chamados` aplica o filtro de visão pelo usuário da sessão. Toda
+`GET /chamados`, `GET /chamados/:id` e `GET /historico` aplicam o filtro de
+visão pelo usuário da sessão (cliente não recebe mensagens internas). Toda
 mutation revalida no servidor (`403`). A UI só esconde o que o servidor
 bloquearia.
 
@@ -350,37 +413,42 @@ bloquearia.
 - Toda tela: carregando (skeleton simples), vazio (texto orientando), erro
   ("tentar de novo").
 - Mutation falha → toast com `mensagem` do servidor; cache intacto.
-- `BroadcastChannel` indisponível ou aba suspensa → faixa "sem atualização em
-  tempo real"; refetch de tudo ao voltar o foco (`refetchOnWindowFocus`).
+- `BroadcastChannel` indisponível → fallback por `storage` (§4.3). Aba
+  suspensa → `refetchOnWindowFocus` refaz as queries ao voltar.
 - Log inválido em `localStorage` (JSON quebrado, evento desconhecido) →
-  descarta o log, zera relógio, toast "dados reiniciados".
-- Rota com id inexistente → 404 amigável com link para a lista do perfil.
+  descarta só a chave inválida e toast "1 evento ignorado". Relógio inválido →
+  reinicia o relógio.
+- Rota com id inexistente ou sem acesso → página amigável com link para a
+  lista do perfil.
 
 ## 9. Performance
 
-- Conversa e filas com `@tanstack/react-virtual`.
-- Ordenação/filtro das filas em `useMemo` sobre o cache; nada recalculado a
-  cada evento fora do que o `reducer` mudou.
+- Conversa e filas com `@tanstack/react-virtual`; conversa com `measureElement`.
+- Ordenação/filtro das filas e agregados do gestor em `useMemo` sobre o cache.
 - `dados.json` via `import()` dinâmico dentro de `mock-server/db.ts`.
-- `useNow()` a cada 30 s; componentes de badge assinam só ele.
-- `setQueryData` por evento, sem `invalidateQueries` em cascata. `GET /equipe`
-  é a exceção: invalida ao receber `chamado.atribuido` ou `status.alterado`.
+- `useNow()` com intervalo próprio; componentes de badge assinam só ele.
+- `setQueryData` por evento, sem `invalidateQueries`. Caches: `['chamados']`
+  (lista), `['chamado', id]` (detalhe com mensagens e histórico),
+  `['historico']`. O `reducer` sabe atualizar os três.
 
 ## 10. Testes (Vitest + Testing Library)
 
-1. `reducer`: aplica os 4 tipos; ignora `id` repetido; ignora atribuição
-   concorrente; cliente respondendo em `aguardando_cliente` gera status
-   automático.
-2. `sla.ts`: faixas, pausa, vencido, prazo relevante, com relógio fixo.
-3. `status.ts`: tabela permite/bloqueia por perfil; reabertura sem responsável
-   vai para `aberto`.
-4. `similaridade.ts`: acha par real do `dados.json`; não sugere título sem
-   palavra em comum; respeita 90 dias.
-5. `ocioso.ts`: consultor sem nada a semana toda = 7 d; com um chamado ativo o
-   tempo todo = 0.
-6. Conversa: mensagem nova com texto na caixa mostra aviso e não rola.
-7. Fila da consultora: ordenação "estoura primeiro" com 4 chamados fixos.
-8. Login: PIN errado → erro; cada perfil → rota inicial certa.
+1. `reducer`: aplica os 4 tipos e acrescenta histórico; ignora `id` repetido;
+   não muda status em `chamado.atribuido`; preenche `primeira_resposta_em`
+   só com mensagem não interna de equipe.
+2. `handlers`: atribuir chamado `aberto` emite dois eventos; cliente responder
+   em `aguardando_cliente` emite dois; pegar chamado com dono → `409`;
+   motivo vazio em transição manual → `400`.
+3. `sla.ts`: faixas, pausa, vencido, prazo relevante, com relógio fixo.
+4. `status.ts`: tabela permite/bloqueia por perfil.
+5. `similaridade.ts`: acha #10612 para o título de #10614; não sugere título
+   sem palavra em comum; respeita 90 dias.
+6. `equipe.ts`: consultor sem nada a semana toda = 7 d ocioso; com um chamado
+   ativo o tempo todo = 0.
+7. Conversa: mensagem nova com texto na caixa mostra aviso e não rola.
+8. Fila da consultora: ordenação "estoura primeiro" com 5 chamados fixos
+   (vencido, crítico, ok, pausado, fechado).
+9. Login: PIN errado → erro; cada perfil → rota inicial certa.
 
 Fixtures: recorte do `dados.json` em `tests/fixtures/`. Sem e2e nesta entrega;
 anotado no README como próximo passo.
@@ -396,9 +464,16 @@ anotado no README como próximo passo.
   colaborador `brunopujoniseidor` em leitura. Push e convite só com ordem
   explícita do Romero, no fim.
 
-## 12. Fora de escopo
+## 12. Ordem de implementação (orientação para o plano)
+
+Primeiro o núcleo sem tela: tipos, `reducer`, `db`, `eventLog`, `bus`,
+`handlers`, com os testes 1 a 6. É onde as regras se materializam. Depois
+login e casca, detalhe compartilhado, fila da consultora, cliente, gestor,
+simulador e painel, README.
+
+## 13. Fora de escopo
 
 Autenticação real, backend, anexos, notificações por e-mail, busca full-text,
 relatórios além do painel do gestor, internacionalização da interface (textos
 em pt-BR; só datas seguem o locale do usuário), e2e, mobile dedicado (layout
-responde, mas não é o alvo).
+responde, mas não é o alvo), extensão de prazo por tempo pausado.
