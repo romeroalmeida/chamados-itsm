@@ -141,7 +141,8 @@ da sessão. O servidor preenche em `POST /chamados`: `numero` = maior + 1,
 `aberto_em`/`atualizado_em` do relógio virtual, prazos pela §6.2,
 `responsavel_id: null`, `sla_pausado: false`.
 
-`/atribuir` em `resolvido`/`fechado` → `400`. `GET /historico` para cliente →
+`/atribuir` com `X-Usuario-Id` de consultor e `consultor_id` diferente do
+próprio → `403`. `/atribuir` em `resolvido`/`fechado` → `400`. `GET /historico` para cliente →
 `403` (a tela dele não usa). Em `GET /chamados/:id`, cliente recebe o histórico
 de status **sem `motivo`** e sem entradas de atribuição; equipe recebe tudo.
 
@@ -189,7 +190,8 @@ pode chegar mais de uma vez.
 4. `socket.ts` é o "servidor" do socket: aplica `visivelPara(usuario, chamado)`
    (a mesma função dos handlers, §7) ao usuário da sessão daquela aba e
    **descarta** evento de chamado invisível e `mensagem.adicionada` interna
-   para cliente. Só então repassa ao app.
+   para cliente. Aba sem sessão (tela de login) descarta tudo. Só então
+   repassa ao app.
 5. `realtime.ts` ignora `id` já visto, aplica com o `reducer` e projeta nos
    caches (§4.6).
 
@@ -215,7 +217,7 @@ Se a aba fecha, a próxima que pedir o lock assume. Sem `navigator.locks`
 Ligado por padrão. Painel discreto no rodapé: pausar/retomar, velocidade (1x,
 5x, 20x), "disparar evento agora", "resetar dados", contador de eventos
 recebidos e de duplicatas descartadas, indicador "esta aba simula / outra aba
-simula". Estado (ligado, velocidade) em `localStorage` para valer em todas as
+simula". `ligado` em `localStorage` (`itsm:simulador`) para valer em todas as
 abas; `velocidade` vive só em `itsm:relogio` (§4.5), fonte única.
 
 Duplicação proposital: `bus.publicar` em `bus.ts`, quando o simulador está
@@ -394,7 +396,9 @@ prazo (badge de SLA para equipe; "previsão" para cliente), cliente e empresa
 para altura variável), ordem cronológica, autor e hora no fuso do usuário;
 notas internas com fundo distinto e rótulo "só a equipe vê", ocultas para
 cliente. Histórico de status com motivos: equipe vê tudo em aba "Histórico";
-cliente vê os passos resumidos no topo da conversa. Caixa de resposta com
+cliente vê os passos resumidos no topo da conversa: a visão de cliente
+renderiza só entradas `tipo === 'status'` e nunca lê `motivo`, qualquer que
+seja o caminho (HTTP ou socket) por onde a entrada chegou. Caixa de resposta com
 alternância "Resposta / Nota interna" (equipe) ou só resposta (cliente). Menu
 de ações filtrado por §6.1 e §7; toda ação com motivo abre diálogo (Radix)
 com campo obrigatório.
