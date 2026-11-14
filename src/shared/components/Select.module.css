@@ -1,0 +1,4 @@
+.trigger { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--espaco-2); min-width: 160px; padding: 6px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); background: var(--cor-superficie); }
+.conteudo { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); box-shadow: 0 8px 24px rgb(0 0 0 / 15%); padding: 4px; z-index: 60; }
+.item { padding: 6px 10px; border-radius: 6px; cursor: pointer; outline: none; }
+.item[data-highlighted] { background: #eef2ff; }

@@ -1,0 +1,5 @@
+.lista { display: flex; gap: var(--espaco-1); border-bottom: 1px solid var(--cor-borda); }
+.aba { padding: 8px 12px; border: 0; background: none; color: var(--cor-texto-fraco); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.aba[data-state="active"] { color: var(--cor-texto); border-bottom-color: var(--cor-primaria); font-weight: 600; }
+.contador { margin-left: 6px; background: var(--cor-superficie-2); border-radius: 999px; padding: 0 6px; font-size: 12px; }
+.aba[data-state="active"] .contador { background: var(--cor-primaria-suave); color: var(--cor-primaria); }

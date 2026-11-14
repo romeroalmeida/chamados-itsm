@@ -1,0 +1,10 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: var(--fonte); color: var(--cor-texto); background: var(--cor-fundo); font-size: 14px; line-height: 1.45; font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--cor-primaria); }
+:focus-visible { outline: 2px solid var(--cor-primaria); outline-offset: 2px; }
+::selection { background: var(--cor-primaria-suave); }
+.mono { font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

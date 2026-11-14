@@ -1,0 +1,10 @@
+.badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: var(--cor-texto-fraco); background: var(--cor-superficie-2); white-space: nowrap; }
+.ok { background: var(--sla-ok-suave); color: var(--sla-ok); }
+.atencao { background: var(--sla-atencao-suave); color: var(--sla-atencao); }
+.critico { background: var(--sla-critico-suave); color: var(--sla-critico); }
+.ultima_hora { background: var(--sla-ultima-hora-suave); color: var(--sla-ultima-hora); }
+.vencido { background: var(--sla-vencido-suave); color: var(--sla-vencido); }
+.pausado { background: var(--sla-pausado-suave); color: var(--sla-pausado); }
+.encerrado { background: var(--sla-encerrado-suave); color: var(--sla-encerrado); }
+.neutro { background: var(--cor-superficie-2); color: var(--cor-texto-fraco); font-weight: 500; }
+.ok::before, .atencao::before, .critico::before, .ultima_hora::before, .vencido::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 999px; background: currentColor; margin-right: 5px; vertical-align: 1px; }

@@ -1,0 +1,7 @@
+.btn { display: inline-flex; align-items: center; gap: var(--espaco-2); height: 30px; padding: 0 12px; border-radius: var(--raio-pequeno); border: 1px solid var(--cor-borda); background: var(--cor-superficie); transition: background var(--transicao), border-color var(--transicao); }
+.btn:hover { background: #f0f2f5; }
+.btn:disabled { opacity: .5; cursor: default; }
+.primaria { background: var(--cor-primaria); color: var(--cor-primaria-texto); border-color: var(--cor-primaria); }
+.primaria:hover { filter: brightness(1.07); }
+.perigo { color: var(--sla-vencido); }
+.pequeno { height: 24px; padding: 0 8px; font-size: 13px; }
