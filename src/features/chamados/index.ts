@@ -1,5 +1,5 @@
 export { ChamadoPage } from './pages/ChamadoPage'
-export { DetalheChamado } from './components/DetalheChamado'
 export { FilaConsultorPage } from './pages/FilaConsultorPage'
 export { MeusChamadosPage } from './pages/MeusChamadosPage'
 export { NovoChamadoPage } from './pages/NovoChamadoPage'
+export { DetalheChamado } from './components/DetalheChamado'
