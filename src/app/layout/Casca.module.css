@@ -1,0 +1,7 @@
+.casca { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
+.topo { display: flex; align-items: center; gap: var(--espaco-4); padding: var(--espaco-2) var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
+.marca { font-weight: 700; }
+.espaco { flex: 1; }
+.usuario { color: var(--cor-texto-fraco); }
+.conteudo { min-height: 0; overflow: auto; }
+.faixaOffline { background: var(--sla-atencao); color: #fff; padding: 4px 16px; font-size: 13px; }

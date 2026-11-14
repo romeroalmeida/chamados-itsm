@@ -1,4 +1,4 @@
-// API pública da feature "chamados".
-// Exporte aqui SÓ o que outras partes do app podem importar.
-// O resto (componentes e services internos) fica privado.
-export {}
+export { ChamadoPage } from './pages/ChamadoPage'
+export { FilaConsultorPage } from './pages/FilaConsultorPage'
+export { MeusChamadosPage } from './pages/MeusChamadosPage'
+export { NovoChamadoPage } from './pages/NovoChamadoPage'
