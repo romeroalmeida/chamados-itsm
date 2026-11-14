@@ -98,7 +98,8 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
       const chamado: Chamado = {
         id: uuid(), numero: db.proximoNumero(), titulo, descricao, categoria_id: cat.id, grupo_id: cat.grupo_id, prioridade,
         status: 'aberto', solicitante_id: u.id, responsavel_id: null, aberto_em: agora, atualizado_em: agora,
-        primeira_resposta_em: null, ...calcularPrazos(agora, prioridade, db.lookups().sla), sla_pausado: false, resolvido_em: null, fechado_em: null,
+        primeira_resposta_em: null, ...calcularPrazos(agora, prioridade, db.lookups().sla),
+        sla_pausado: false, resolvido_em: null, fechado_em: null,
       }
       db.emitir([evento('chamado.aberto', chamado)])
       return HttpResponse.json({ id: chamado.id }, { status: 201 })
@@ -116,7 +117,9 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
       const m: Mensagem = { id: uuid(), chamado_id: c.id, criada_em: agora, autor_id: u.id, texto, interna }
       const eventos: Evento[] = [evento('mensagem.adicionada', m)]
       if (u.perfil === 'cliente' && c.status === 'aguardando_cliente') {
-        eventos.push(evento('status.alterado', { chamado_id: c.id, de: 'aguardando_cliente', para: 'em_atendimento', motivo: MOTIVO_CLIENTE_RESPONDEU, usuario_id: u.id }))
+        eventos.push(evento('status.alterado', {
+          chamado_id: c.id, de: 'aguardando_cliente', para: 'em_atendimento', motivo: MOTIVO_CLIENTE_RESPONDEU, usuario_id: u.id,
+        }))
       }
       db.emitir(eventos)
       return HttpResponse.json({ ok: true }, { status: 201 })
@@ -133,12 +136,16 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
       if (c.status === 'resolvido' || c.status === 'fechado') throw erro('validacao', 'Chamado encerrado não recebe atribuição')
       if (u.perfil === 'consultor') {
         if (consultor.id !== u.id) throw erro('sem_permissao', 'Consultor só pega chamado para si')
+        // janela de corrida entre abas (ms): a validação é contra o db local, já atualizado pelo bus; aceita como limite do fake (spec §6.3)
         if (c.responsavel_id) throw erro('conflito', `${nomeDe(c.responsavel_id)} pegou antes de você`)
       }
       const eventos: Evento[] = [evento('chamado.atribuido', { chamado_id: c.id, consultor_id: consultor.id })]
       if (c.status === 'aberto') {
         const motivo = u.perfil === 'gestor' ? motivoAtribuidoPor(u.nome) : MOTIVO_PEGOU
-        eventos.push({ ...evento('status.alterado', { chamado_id: c.id, de: 'aberto', para: 'em_atendimento', motivo, usuario_id: u.id }), ocorrido_em: eventos[0]!.ocorrido_em })
+        eventos.push({
+          ...evento('status.alterado', { chamado_id: c.id, de: 'aberto', para: 'em_atendimento', motivo, usuario_id: u.id }),
+          ocorrido_em: eventos[0]!.ocorrido_em,
+        })
       }
       db.emitir(eventos)
       return HttpResponse.json({ ok: true })

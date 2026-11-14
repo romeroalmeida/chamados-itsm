@@ -82,10 +82,11 @@ export function criarSimulador(opts: Opcoes): Simulador {
   }
   const agendar = () => {
     if (!ligado || !detemLock) return
+    if (timer) clearTimeout(timer)
     timer = setTimeout(async () => { try { await executar() } finally { agendar() } }, base / Math.max(1, velocidade()))
   }
   const obterLock = opts.obterLock ?? (async (fn) => {
-    if (typeof navigator !== 'undefined' && 'locks' in navigator) return navigator.locks.request('itsm:simulador', fn)
+    if (typeof navigator !== 'undefined' && 'locks' in navigator) return navigator.locks.request(CHAVE_SIMULADOR, fn)
     return fn() // sem Web Locks: roda em toda aba (documentado)
   })
   const comecar = () => {

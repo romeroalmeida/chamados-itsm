@@ -4,7 +4,7 @@ const STOPWORDS = new Set(['a', 'o', 'as', 'os', 'de', 'do', 'da', 'dos', 'das',
 const DIAS_90 = 90 * 24 * 3_600_000
 
 export function normalizarTitulo(t: string): string[] {
-  return t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .split(/[^a-z0-9]+/).filter((p) => p.length > 1 && !STOPWORDS.has(p))
 }
 
