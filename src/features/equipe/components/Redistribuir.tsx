@@ -22,17 +22,19 @@ export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar 
   }
   return (
     <div className={s.secao}>
-      <table className={s.tabela}>
-        <thead><tr><th></th><th>#</th><th>Título</th><th>Cliente</th><th>Prazo</th></tr></thead>
-        <tbody>
-          {chamados.map((c) => (
-            <tr key={c.id}>
-              <td><input type="checkbox" aria-label={`Selecionar #${c.numero}`} checked={marcados.has(c.id)} onChange={() => alternar(c.id)} /></td>
-              <td>{c.numero}</td><td>{c.titulo}</td><td>{usuarios[c.solicitante_id]?.nome}</td><td><BadgePrazo chamado={c} agora={agora} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className={s.rolagem}>
+        <table className={s.tabela}>
+          <thead><tr><th></th><th>#</th><th>Título</th><th>Cliente</th><th>Prazo</th></tr></thead>
+          <tbody>
+            {chamados.map((c) => (
+              <tr key={c.id}>
+                <td><input type="checkbox" aria-label={`Selecionar #${c.numero}`} checked={marcados.has(c.id)} onChange={() => alternar(c.id)} /></td>
+                <td>{c.numero}</td><td>{c.titulo}</td><td>{usuarios[c.solicitante_id]?.nome}</td><td><BadgePrazo chamado={c} agora={agora} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <Select ariaLabel="Destino" valor={destino} onChange={setDestino} placeholder="Redistribuir para…" opcoes={consultores.map((c) => ({ valor: c.id, rotulo: c.nome }))} />
         <Button variante="primaria" disabled={!destino || marcados.size === 0 || atribuir.isPending} onClick={executar}>Redistribuir {marcados.size || ''}</Button>

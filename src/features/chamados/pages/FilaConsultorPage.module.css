@@ -4,7 +4,9 @@
 .busca { flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); }
 .detalhe { min-height: 0; }
 .vazioDetalhe { display: grid; place-items: center; height: 100%; color: var(--cor-texto-fraco); }
+.voltar { display: none; }
 @media (max-width: 900px) {
   .pagina { grid-template-columns: 1fr; }
   .fila.comDetalhe { display: none; }
+  .voltar { display: inline-flex; margin: 8px 12px; }
 }

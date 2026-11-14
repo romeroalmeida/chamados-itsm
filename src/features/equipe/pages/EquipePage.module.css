@@ -9,6 +9,7 @@
 .numeros { display: flex; gap: var(--espaco-3); font-size: 13px; color: var(--cor-texto-fraco); }
 .numeros strong { color: var(--cor-texto); }
 .vermelho { color: var(--sla-vencido) !important; } .laranja { color: var(--sla-critico) !important; }
+.rolagem { overflow-x: auto; }
 .tabela { width: 100%; border-collapse: collapse; background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); font-size: 13px; }
 .tabela th, .tabela td { padding: 8px 10px; border-bottom: 1px solid var(--cor-borda); text-align: left; }
 .link { background: none; border: 0; color: var(--cor-primaria); text-decoration: underline; padding: 0; }

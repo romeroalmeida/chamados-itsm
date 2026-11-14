@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import type { Chamado, UsuarioConsultor } from '@/shared/types'
 import { useChamados, useMapaUsuarios } from '@/api/queries'
-import { Carregando, Erro, FaixaAlerta, Select, Tabs, useToast } from '@/shared/components'
+import { Button, Carregando, Erro, FaixaAlerta, Select, Tabs, useToast } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { formatarRelativo } from '@/shared/utils/datas'
 import { faixaSla, restanteMs, type Faixa } from '@/shared/utils/sla'
@@ -64,7 +64,14 @@ export function FilaConsultorPage() {
         <ListaChamados chamados={lista} agora={agora} usuario={usuario} usuarios={usuarios} ativoId={id} onAbrir={(cid) => nav(`/fila/${cid}`)} vazio={filtro.aba === 'meus' ? 'Nenhum chamado seu com esse filtro.' : 'Fila do grupo vazia. Bom sinal.'} />
       </section>
       <section className={s.detalhe} aria-label="Chamado">
-        {id ? <DetalheChamado key={id} id={id} usuario={usuario} /> : <div className={s.vazioDetalhe}>Escolha um chamado na fila. O primeiro é o que estoura antes.</div>}
+        {id
+          ? (
+            <>
+              <Button pequeno className={s.voltar} onClick={() => nav('/fila')}>Voltar à fila</Button>
+              <DetalheChamado key={id} id={id} usuario={usuario} />
+            </>
+          )
+          : <div className={s.vazioDetalhe}>Escolha um chamado na fila. O primeiro é o que estoura antes.</div>}
       </section>
     </div>
   )
