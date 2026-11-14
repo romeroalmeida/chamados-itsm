@@ -1,7 +1,81 @@
-.pagina { min-height: 100%; display: grid; place-items: center; padding: var(--espaco-4); }
-.cartao { width: min(400px, 100%); background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: var(--espaco-6); display: grid; gap: var(--espaco-4); }
-.titulo { margin: 0; font-size: 20px; }
-.personas { display: grid; gap: var(--espaco-2); }
-.persona { height: auto; padding: 8px 12px; align-items: flex-start; text-align: left; display: grid; }
-.persona small { color: var(--cor-texto-fraco); }
-.link { background: none; border: 0; color: var(--cor-primaria); padding: 0; text-decoration: underline; }
+/* Visual do login do escalanova (Tailwind) traduzido para os tokens daqui. */
+.pagina { position: relative; min-height: 100%; overflow: hidden; background: linear-gradient(to bottom, #fdfdfb, #f1f0fb); color: var(--cor-texto); }
+/* Manchas de cor bem sutis: âmbar e verde-água em cima, índigo embaixo. */
+.manchas { position: absolute; inset: 0; pointer-events: none; }
+.manchas i { position: absolute; border-radius: 50%; }
+.manchas i:nth-child(1) { top: -96px; left: 8%; width: 416px; height: 320px; background: #f5d58a; opacity: .25; filter: blur(90px); }
+.manchas i:nth-child(2) { top: -64px; right: 10%; width: 384px; height: 288px; background: #a8dccf; opacity: .25; filter: blur(90px); }
+.manchas i:nth-child(3) { bottom: -160px; left: 15%; width: 704px; height: 384px; background: var(--cor-primaria); opacity: .12; filter: blur(100px); }
+
+.grade { position: relative; display: grid; align-content: center; gap: 24px; max-width: 480px; min-height: 100dvh; margin: 0 auto; padding: 40px 16px; }
+
+.lado { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.marca { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: #1e1a6b; }
+.marcaIcone { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--cor-primaria); color: #fff; box-shadow: 0 6px 14px -6px rgb(79 70 229 / 60%); }
+.marcaIcone svg { width: 18px; height: 18px; }
+.chamada { margin: 0; font-size: clamp(28px, 8vw, 36px); line-height: 1.04; font-weight: 700; letter-spacing: -.035em; color: #1e1a6b; text-wrap: balance; }
+.beneficios { display: none; margin: 6px 0 0; padding: 0; list-style: none; flex-direction: column; gap: 22px; }
+.beneficios li { display: flex; gap: 16px; }
+.beneficios strong { display: block; margin-bottom: 4px; font-size: 18px; font-weight: 600; color: var(--cor-texto); }
+.beneficios li > span:last-child > span { display: block; font-size: 15px; line-height: 1.5; color: #374151; }
+.beneficioIcone { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 30%; background: rgb(255 255 255 / 80%); color: var(--cor-primaria); box-shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 4px 12px -4px rgb(30 26 107 / 14%); }
+.beneficioIcone svg { width: 46%; height: 46%; }
+
+.cartao { display: flex; flex-direction: column; background: var(--cor-superficie); border-radius: 28px; padding: 30px 22px; box-shadow: 0 30px 60px -24px rgb(22 22 63 / 22%), 0 0 0 1px rgb(30 26 107 / 5%); }
+
+@media (min-width: 1024px) {
+  .grade { max-width: none; grid-template-columns: auto clamp(420px, 30vw, 500px); justify-content: center; align-items: center; gap: clamp(40px, 5vw, 112px); }
+  .lado { gap: clamp(22px, 1.8vw, 30px); }
+  .marca { font-size: 24px; }
+  .chamada { font-size: clamp(36px, 3.2vw, 58px); line-height: 1.04; white-space: nowrap; }
+  .beneficios { display: flex; }
+  .cartao { min-height: 520px; padding: clamp(32px, 2.8vw, 48px) clamp(28px, 2.6vw, 44px); }
+}
+
+/* Topo (título), meio (formulário) e rodapé (nota) espalhados na altura do cartão: trocar de passo não faz o cartão pular. */
+.moldura { display: flex; flex: 1; flex-direction: column; justify-content: space-between; gap: 24px; }
+.topo { display: flex; flex-direction: column; gap: 10px; text-align: center; }
+.titulo { margin: 0; font-size: 30px; font-weight: 650; letter-spacing: -.02em; color: var(--cor-texto); }
+.sub { font-size: 15.5px; line-height: 1.5; color: var(--cor-texto-fraco); }
+.meio { display: flex; flex-direction: column; gap: 20px; }
+.rodape { border-top: 1px solid var(--cor-borda); padding-top: 18px; text-align: center; font-size: 13.5px; line-height: 1.5; color: var(--cor-texto-fraco); }
+
+.form { display: flex; flex-direction: column; gap: 20px; }
+.rotulo { display: block; margin-bottom: 8px; font-size: 14.5px; font-weight: 600; color: var(--cor-texto); }
+.entrada { width: 100%; height: 54px; padding: 0 18px; border: 1.5px solid transparent; border-radius: 14px; background: #f2f3f8; font-size: 16px; color: var(--cor-texto); outline: none; transition: border-color var(--transicao), background var(--transicao), box-shadow var(--transicao); }
+.entrada::placeholder { color: #6b7280; }
+.entrada:focus { border-color: var(--cor-primaria); background: #fff; box-shadow: 0 0 0 4px rgb(79 70 229 / 14%); }
+.entrada[aria-invalid="true"] { border-color: var(--sla-vencido); }
+.erro { display: flex; gap: 6px; margin: 8px 0 0; font-size: 13.5px; font-weight: 500; color: var(--sla-vencido); }
+
+.botao { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 54px; border: 0; border-radius: 14px; background: var(--cor-primaria); color: #fff; font-size: 16px; font-weight: 600; box-shadow: 0 8px 20px -8px rgb(79 70 229 / 70%); transition: background var(--transicao), transform var(--transicao), box-shadow var(--transicao); }
+.botao:hover:not(:disabled) { background: #4338ca; }
+.botao:active:not(:disabled) { transform: scale(.99); }
+.botao:disabled { cursor: default; background: #b9b5f7; box-shadow: none; }
+.botao:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 2px; }
+.botaoSeta { width: 18px; height: 18px; transition: transform var(--transicao); }
+.botao:hover:not(:disabled) .botaoSeta { transform: translateX(2px); }
+
+/* "Quem posso ser?": discreto, sem competir com o botão principal. */
+.personas { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.revelar { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 0; border-radius: 8px; background: none; font-size: 14px; font-weight: 500; color: var(--cor-texto-fraco); }
+.revelar:hover { color: var(--cor-primaria); }
+.revelarSeta { width: 16px; height: 16px; transition: transform var(--transicao); }
+.aberto { transform: rotate(180deg); }
+.listaPersonas { display: grid; gap: 8px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.persona { display: grid; gap: 2px; width: 100%; padding: 11px 14px; border: 1px solid var(--cor-borda); border-radius: 14px; background: var(--cor-superficie); text-align: left; transition: border-color var(--transicao), background var(--transicao), box-shadow var(--transicao); }
+.persona:hover:not(:disabled) { border-color: #c7c4f5; background: #fafaff; box-shadow: 0 4px 12px -6px rgb(79 70 229 / 25%); }
+.persona:disabled { opacity: .6; cursor: progress; }
+.personaNome { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; color: var(--cor-texto); }
+.personaPerfil { padding: 2px 8px; border-radius: 999px; background: var(--cor-primaria-suave); font-size: 12px; font-weight: 600; color: #3730a3; }
+.personaEmail { font-size: 13px; color: var(--cor-texto-fraco); overflow-wrap: anywhere; }
+
+.enviado { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #f2f3f8; text-align: left; font-size: 14.5px; line-height: 1.4; }
+.enviado strong { font-weight: 600; color: var(--cor-texto); overflow-wrap: anywhere; }
+.enviadoIcone { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--cor-primaria-suave); color: var(--cor-primaria); }
+.enviadoIcone svg { width: 18px; height: 18px; }
+
+.acoes { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; }
+.link { padding: 2px 4px; border: 0; border-radius: 6px; background: none; font-weight: 600; color: var(--cor-primaria); }
+.link:hover:not(:disabled) { text-decoration: underline; }
+.link:disabled { cursor: default; font-weight: 400; color: var(--cor-texto-fraco); }

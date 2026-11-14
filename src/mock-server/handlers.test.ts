@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { setupServer } from 'msw/node'
-import { criarHandlers, PIN_PADRAO } from './handlers'
+import { criarHandlers, CODIGO_DEMO } from './handlers'
 import { criarDb, type Db } from './db'
 import { criarBus } from './bus'
 import { criarEventLog } from './eventLog'
@@ -41,14 +41,28 @@ const grupoMarina = MARINA.perfil === 'consultor' ? MARINA.grupo_id : ''
 const semDono = () => Object.values(db.estado().chamados).find((c) => c.status === 'aberto' && c.grupo_id === grupoMarina)!
 
 describe('auth', () => {
-  it('entra com e-mail e PIN padrão', async () => {
-    const r = await fetch('http://localhost/api/auth/entrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: MARINA.email, pin: PIN_PADRAO }) })
+  const semSessao = (url: string, corpo: unknown) => fetch(`http://localhost/api${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+  it('pedir código: ok para qualquer e-mail válido, exista ou não', async () => {
+    for (const email of [MARINA.email, 'ninguem@nada.example']) {
+      const r = await semSessao('/auth/codigo', { email })
+      expect(r.status).toBe(200)
+      expect(await r.json()).toEqual({ ok: true })
+    }
+  })
+  it('pedir código com e-mail inválido dá 400', async () => {
+    expect((await semSessao('/auth/codigo', { email: 'marina' })).status).toBe(400)
+  })
+  it('entra com e-mail e código', async () => {
+    const r = await semSessao('/auth/entrar', { email: MARINA.email, codigo: CODIGO_DEMO })
     expect(r.status).toBe(200)
     expect((await r.json()).id).toBe(MARINA.id)
   })
-  it('PIN errado ou e-mail desconhecido dá 401', async () => {
-    const r = await fetch('http://localhost/api/auth/entrar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: MARINA.email, pin: '000000' }) })
-    expect(r.status).toBe(401)
+  it('ainda aceita o campo antigo pin', async () => {
+    expect((await semSessao('/auth/entrar', { email: MARINA.email, pin: CODIGO_DEMO })).status).toBe(200)
+  })
+  it('código errado ou e-mail desconhecido dá 401', async () => {
+    expect((await semSessao('/auth/entrar', { email: MARINA.email, codigo: '000000' })).status).toBe(401)
+    expect((await semSessao('/auth/entrar', { email: 'ninguem@nada.example', codigo: CODIGO_DEMO })).status).toBe(401)
   })
   it('sem X-Usuario-Id dá 401', async () => {
     const r = await fetch('http://localhost/api/chamados')

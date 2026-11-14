@@ -1,2 +1,2 @@
 export { LoginPage } from './pages/LoginPage/LoginPage'
-export { PERSONAS, PIN_PADRAO } from './services/entrar'
+export { PERSONAS, CODIGO_DEMO } from './services/entrar'

@@ -16,7 +16,7 @@ Não há backend nem variável de ambiente. A API roda dentro do navegador, num 
 
 ## Entrar como cada perfil
 
-O login é fake: e-mail + PIN. O PIN de todos é `123456`.
+O login é fake e tem dois passos: o e-mail, depois um código de 6 números. Nenhum e-mail é enviado. O código de todos é `123456`.
 
 | Perfil | Quem | E-mail | Tela inicial |
 |---|---|---|---|
@@ -24,7 +24,7 @@ O login é fake: e-mail + PIN. O PIN de todos é `123456`.
 | Gestor | Ricardo Monteiro | ricardo.monteiro@suporte.example | /equipe |
 | Cliente | Helena Fernandes | helena.fernandes@lusitania.example | /meus-chamados |
 
-Qualquer outro usuário do `dados.json` também entra com o mesmo PIN. "Quem posso ser?" na tela de login lista os três. Clicar num deles preenche o e-mail e o PIN.
+Qualquer outro usuário do `dados.json` também entra com o mesmo código. "Quem posso ser?" na tela de login lista os três. Clicar num deles preenche o e-mail e já leva para o passo do código. O código entra sozinho no sexto número.
 
 A sessão é por aba. Abra duas abas, entre como Marina numa e Helena na outra, e converse entre elas.
 
@@ -56,7 +56,7 @@ Versões: React 19.3, Vite 8.3, TypeScript 5.9, React Router 7.18, TanStack Quer
 
 ## O que ficou de fora e por quê
 
-- Autenticação real e backend: o teste pede só front e diz que não há backend. O login com PIN serve para trocar de perfil.
+- Autenticação real e backend: o teste pede só front e diz que não há backend. O login com e-mail e código serve para trocar de perfil.
 - Anexos e notificações por e-mail: não estão entre os seis requisitos e não mudam a decisão de o que mostrar na tela.
 - Busca full-text: a fila busca por número, título ou nome do cliente, o que basta para os volumes do arquivo.
 - Relatórios além do painel do gestor: o enunciado pede acompanhar o grupo, não relatórios.

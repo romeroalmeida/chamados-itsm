@@ -7,7 +7,9 @@ import type { Relogio } from '@/shared/utils/relogio'
 import type { Db } from './db'
 import { erro, respostaErro } from './erros'
 
-export const PIN_PADRAO = '123456'
+/** Login sem senha: o "e-mail" com o código nunca sai daqui, então o código de todos é este. */
+export const CODIGO_DEMO = '123456'
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 /** Curinga de origem: em msw/node não há document.baseURI, e caminho relativo não casaria com http://localhost/api. */
 export const BASE = '*/api'
 
@@ -48,10 +50,17 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
   const idDe = (params: Params) => String(params.id)
 
   return [
+    // Responde igual exista ou não o usuário: não dá para descobrir quem tem conta pedindo código.
+    http.post(`${BASE}/auth/codigo`, tentar(async (req) => {
+      const { email } = await corpo<{ email: string }>(req)
+      if (!EMAIL_VALIDO.test(String(email ?? '').trim())) throw erro('validacao', 'Digite um e-mail válido')
+      return HttpResponse.json({ ok: true })
+    })),
     http.post(`${BASE}/auth/entrar`, tentar(async (req) => {
-      const { email, pin } = await corpo<{ email: string; pin: string }>(req)
+      // `pin` continua aceito: é o nome antigo do mesmo campo.
+      const { email, codigo, pin } = await corpo<{ email: string; codigo: string; pin: string }>(req)
       const u = Object.values(db.estado().usuarios).find((u) => u.email.toLowerCase() === String(email ?? '').trim().toLowerCase())
-      if (!u || pin !== PIN_PADRAO) throw erro('nao_autenticado', 'E-mail ou PIN incorretos')
+      if (!u || (codigo ?? pin) !== CODIGO_DEMO) throw erro('nao_autenticado', 'Código incorreto. Confira e tente de novo.')
       return HttpResponse.json(u)
     })),
 

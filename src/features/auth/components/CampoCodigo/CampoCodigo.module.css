@@ -1,0 +1,17 @@
+.campo { position: relative; width: 100%; }
+/* 16px: abaixo disso o iOS dá zoom no campo. Fica transparente, por cima das caixas. */
+.entrada { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; font-size: 16px; opacity: 0; cursor: text; border: 0; padding: 0; }
+/* readOnly e não disabled enquanto confere: disabled tiraria o foco, e depois de um erro a pessoa teria de clicar de novo. */
+.entrada:read-only { cursor: progress; }
+.caixas { display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.metade { display: flex; flex: 1; overflow: hidden; background: var(--cor-superficie); border: 1.5px solid var(--cor-borda-forte); border-radius: 14px; transition: border-color var(--transicao), box-shadow var(--transicao); }
+.metadeFoco { border-color: #c7c4f5; }
+.metadeErro { border-color: var(--sla-vencido); box-shadow: 0 0 0 4px var(--sla-vencido-suave); }
+.caixa { position: relative; display: grid; place-items: center; flex: 1; height: 60px; border-right: 1px solid var(--cor-borda); font-size: 26px; font-weight: 600; color: var(--cor-texto); font-variant-numeric: tabular-nums; }
+.caixa:last-child { border-right: 0; }
+.ativa { border-radius: 12px; box-shadow: inset 0 0 0 2px var(--cor-primaria); }
+.cursor { position: absolute; width: 2px; height: 24px; border-radius: 1px; background: var(--cor-primaria); animation: piscar 1s steps(1) infinite; }
+.traco { width: 10px; height: 2px; border-radius: 999px; background: var(--cor-borda-forte); flex: none; }
+@keyframes piscar { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+@media (max-width: 360px) { .caixa { height: 52px; font-size: 22px; } .caixas { gap: 6px; } }

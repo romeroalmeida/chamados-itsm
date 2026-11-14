@@ -32,15 +32,15 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Onde no código.** `src/shared/components/Dialog.tsx`, `Select.tsx`, `Tabs.tsx`, `Toast.tsx`.
 
-## Login com PIN
+## Login com e-mail e código
 
-**Decisão.** Login fake com e-mail e PIN de 6 dígitos. O PIN de todos é `123456`. "Quem posso ser?" lista Marina, Ricardo e Helena e preenche os campos.
+**Decisão.** Login fake em dois passos, no padrão do escalanova. Primeiro o e-mail (`POST /auth/codigo`, que responde igual exista ou não o usuário). Depois a tela "Confira o seu e-mail" pede o código de 6 números, em duas metades de 3. Nenhum e-mail é enviado: o código de todos é `123456`. "Quem posso ser?" lista Marina, Ricardo e Helena e leva direto ao passo do código.
 
 **Alternativas.** Cartões de persona sem login. Uma rota por perfil.
 
 **Por quê.** O avaliador precisa trocar de perfil sem ler código. Um login de verdade, mesmo fake, exercita sessão, guarda de rota e o cabeçalho `X-Usuario-Id` que o servidor usa para permissão. Qualquer usuário do arquivo entra.
 
-**Onde no código.** `src/features/auth/pages/LoginPage.tsx`, `src/features/auth/services/entrar.ts`, `src/mock-server/handlers.ts` (`PIN_PADRAO`), `src/app/routes/RotaProtegida.tsx`.
+**Onde no código.** `src/features/auth/pages/LoginPage/LoginPage.tsx`, `src/features/auth/components/CampoCodigo/CampoCodigo.tsx`, `src/features/auth/services/entrar.ts`, `src/mock-server/handlers.ts` (`CODIGO_DEMO`), `src/app/routes/RotaProtegida.tsx`.
 
 ## Tempo real
 
