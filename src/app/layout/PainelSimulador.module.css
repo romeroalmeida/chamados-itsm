@@ -1,0 +1,8 @@
+.painel { display: flex; align-items: center; gap: var(--espaco-3); padding: 6px var(--espaco-4); background: #1b1f27; color: #d7dbe2; font-size: 12px; flex-wrap: wrap; }
+.painel strong { color: #fff; }
+.botao { background: #2b303b; color: #fff; border: 1px solid #3a4150; border-radius: 6px; padding: 2px 8px; }
+.botao:hover { background: #363c49; }
+.ativo { color: #7ee2a8; } .inativo { color: #9aa3ad; } .aviso { color: #f6c453; }
+.velocidades { display: inline-flex; gap: 2px; }
+.velocidades .botao[aria-pressed="true"] { background: var(--cor-primaria); border-color: var(--cor-primaria); }
+.espaco { flex: 1; }
