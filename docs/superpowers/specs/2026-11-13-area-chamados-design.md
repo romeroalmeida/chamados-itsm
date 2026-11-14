@@ -58,7 +58,8 @@ baixa 24/72.
 | Tempo real | barramento `BroadcastChannel` entre abas + simulador de fundo em uma aba só; ~1 em 10 eventos reenviado de propósito | só simulador; só multi-aba |
 | Relógio | virtual: nasce em `meta.agora`, avança com velocidade ajustável; `useNow()` é a única fonte de "agora" | relógio real com datas deslocadas; relógio real puro (100% vencido) |
 | Persistência | `dados.json` + log de eventos em `localStorage`, uma chave por evento; toda aba reconstrói o estado aplicando o log | só memória; estado derivado em IndexedDB |
-| Reducer | burro: aplica exatamente o evento recebido; eventos derivados (status automático) são emitidos pelo handler | reducer que infere efeitos colaterais |
+| Reducer | burro: aplica exatamente o evento recebido, nunca altera `para`; eventos derivados (status automático) são emitidos pelo handler | reducer que infere efeitos colaterais |
+| Sessão | Zustand persistido em `sessionStorage`, por aba | `localStorage` (uma aba trocaria o usuário da outra) |
 | Agregados do gestor | calculados no cliente a partir do cache de chamados e histórico | endpoint `/equipe` (exigiria invalidação a cada evento) |
 | Escopo | 6 obrigatórios + dores das personas (§5) | só os 6 |
 | Datas | `Intl.DateTimeFormat` com `locale` e `zoneinfo` do usuário | biblioteca de datas |
@@ -116,8 +117,10 @@ Regras:
 
 ### 4.1 Contrato HTTP (MSW)
 
-Sessão: `POST /auth/entrar` devolve o `Usuario`; o id vai para o store Zustand e
-segue em header `X-Usuario-Id`. Sem token: é fake e documentado.
+Sessão: `POST /auth/entrar` devolve o `Usuario`; o store Zustand persiste em
+`sessionStorage` (chave `itsm:sessao`), **por aba**, para Marina e Helena
+conviverem no mesmo navegador. Reload mantém; nova aba pede login. Toda
+requisição leva header `X-Usuario-Id`. Sem token: é fake e documentado.
 
 | Método | Rota | Corpo | Resposta | Eventos emitidos |
 |---|---|---|---|---|
@@ -133,6 +136,14 @@ segue em header `X-Usuario-Id`. Sem token: é fake e documentado.
 
 `solicitante_id` só é aceito de consultor (abrir em nome de cliente); para
 cliente é ignorado e forçado ao próprio id; gestor não abre chamado (`403`).
+O servidor preenche em `POST /chamados`: `numero` = maior + 1, `grupo_id` =
+`categoria.grupo_id`, `prioridade` pela regra da §5.3, `status: 'aberto'`,
+`aberto_em`/`atualizado_em` do relógio virtual, prazos pela §6.2,
+`responsavel_id: null`, `sla_pausado: false`.
+
+`/atribuir` em `resolvido`/`fechado` → `400`. `GET /historico` para cliente →
+`403` (a tela dele não usa). Em `GET /chamados/:id`, cliente recebe o histórico
+de status **sem `motivo`** e sem entradas de atribuição; equipe recebe tudo.
 
 Motivos automáticos são preenchidos pelo **servidor**: "Assumido para
 atendimento" (consultor pega), "Atribuído por {gestor}", "Cliente respondeu",
@@ -167,12 +178,19 @@ pode chegar mais de uma vez.
 2. Handler valida contra o `db` local, cria os eventos com `ocorrido_em` do
    relógio virtual, **grava cada um no `eventLog`** (só a aba de origem grava),
    aplica no `db` via `reducer`, publica no `bus`.
-3. `bus` entrega a todas as abas, inclusive a origem. Em cada aba, dois
+3. `bus.publicar` chama os assinantes **locais** diretamente e depois posta no
+   `BroadcastChannel` (que não entrega à própria instância). Em cada aba, dois
    assinantes: `db.ts` (aplica no `db` daquela aba, com dedupe por `id`) e
-   `socket.ts` (repassa ao app). Assim o handler de qualquer aba valida contra
-   estado atualizado.
-4. `realtime.ts` ignora `id` já visto (Set em memória), aplica o evento no cache
-   do TanStack Query com `setQueryData` usando o mesmo `reducer`.
+   `socket.ts`. Assim o handler de qualquer aba valida contra estado atualizado.
+4. `socket.ts` é o "servidor" do socket: aplica `visivelPara(usuario, chamado)`
+   (a mesma função dos handlers, §7) ao usuário da sessão daquela aba e
+   **descarta** evento de chamado invisível e `mensagem.adicionada` interna
+   para cliente. Só então repassa ao app.
+5. `realtime.ts` ignora `id` já visto, aplica com o `reducer` e projeta nos
+   caches (§4.6).
+
+Bootstrap de `db.ts`: assina o `bus` **antes** de reler o log; o dedupe absorve
+a sobreposição.
 
 Não há atualização otimista separada; a tela muda quando o evento chega, que é
 imediato porque o `bus` entrega localmente. Um caminho só para dado mudar.
@@ -197,8 +215,10 @@ simula". Estado (ligado, velocidade) em `localStorage` para valer em todas as
 abas.
 
 A cada intervalo (base 8 s em 1x, dividido pela velocidade) escolhe uma ação
-plausível e a executa **pelos mesmos handlers HTTP** da §4.1, como se fosse um
-usuário em outra aba:
+plausível e a executa com `fetch` **pelos mesmos handlers HTTP** da §4.1,
+mandando `X-Usuario-Id` do ator simulado (passa pela validação da §7), como se
+fosse um usuário em outra aba. "Pausar" para os eventos; o relógio virtual
+continua (só a velocidade o afeta, §4.5):
 
 - cliente responde em chamado `aguardando_cliente` ou `em_atendimento`;
 - consultor pega chamado da fila sem dono do próprio grupo;
@@ -218,10 +238,26 @@ um prazo de 2h estoura em 6 min, visível na demo. Mudar a velocidade reancora
 mesma função para carimbar eventos. "Resetar dados" apaga as chaves `itsm:*` e
 recarrega: volta ao `dados.json` puro.
 
-### 4.6 Reducer
+### 4.6 Reducer e estado
 
-`aplicar(estado, evento): estado`. Puro. Ignora `id` já aplicado (conjunto de
-ids no estado).
+```ts
+interface Estado {
+  chamados: Record<string, Chamado>
+  mensagens: Record<string, Mensagem[]>     // por chamado_id, ordem cronológica
+  historico: Historico[]
+  usuarios: Record<string, Usuario>         // necessário para saber o perfil do autor
+  idsAplicados: Set<string>
+}
+aplicar(estado: Estado, evento: Evento): Estado   // puro; devolve o mesmo objeto se id já aplicado
+```
+
+`db.ts` guarda um `Estado` completo. `realtime.ts` guarda um `Estado` espelho
+(montado a partir das queries já carregadas; `usuarios` vem de `GET /usuarios`,
+carregado no login) e, após cada `aplicar`, **projeta** para os caches do
+TanStack Query: `['chamados']` ← `Object.values(chamados)` visíveis;
+`['chamado', id]` ← `{ chamado, mensagens[id], historico filtrado }`, só se esse
+cache já existe; `['historico']` ← `historico`. Projeção em `api/realtime.ts`,
+uma função por cache.
 
 | Evento | Efeito |
 |---|---|
@@ -231,7 +267,12 @@ ids no estado).
 | `status.alterado` | `status = para`, `atualizado_em`; `sla_pausado = (para === 'aguardando_cliente')`; `resolvido_em` ao entrar em `resolvido`, `fechado_em` ao entrar em `fechado` (não limpa ao reabrir, como no dado); **acrescenta** `historico { tipo: 'status', de, para, motivo, usuario_id }` |
 
 Status nunca muda por `chamado.atribuido` nem por `mensagem.adicionada`; o
-handler emite o `status.alterado` correspondente (§4.1).
+handler emite o `status.alterado` correspondente (§4.1). O reducer nunca
+altera `para`: estado e histórico sempre batem com o payload.
+
+Ordem no replay: `chamado.atribuido` e seu `status.alterado` têm o mesmo
+`ocorrido_em` e desempatam pelo `id`. Como o reducer trata cada um de forma
+independente, a ordem entre eles não importa. Não impor ordem rígida.
 
 ## 5. Telas
 
@@ -258,8 +299,9 @@ Fila:
   resolvidos/fechados por último, mais recente primeiro.
 - Linha: número, título, nome do cliente, status, badge de prazo ("vence em
   1h 40", "venceu há 3h", "pausado"), ponto azul se há mensagem nova desde a
-  última vez que ela abriu o chamado (`useUltimaVisita`, por chamado, em
-  `localStorage`; sem registro = sem ponto).
+  última vez que ela abriu o chamado (`useUltimaVisita`, chave
+  `itsm:visita:<usuarioId>:<chamadoId>` em `localStorage`; sem registro = sem
+  ponto). A faixa de novidades do cliente usa `itsm:visita:<usuarioId>`.
 - Filtro por status; busca por número ou texto do título.
 - Ordenações alternativas: mais recente, cliente.
 
@@ -276,7 +318,8 @@ Todos os agregados são calculados no cliente, em `shared/utils/equipe.ts`, a
 partir de `GET /chamados` e `GET /historico` (o gestor recebe tudo dos grupos
 dele). Mudam sozinhos quando o cache muda por evento.
 
-- **Cartões por consultor**, dos grupos que ele gere: ativos, vencidos,
+- **Cartões por consultor**, dos grupos que ele gere: ativos (`em_atendimento`
+  ou `aguardando_cliente`; `aberto` nunca tem responsável), vencidos,
   vencendo em 4h, e **tempo ocioso nos últimos 7 dias** (§6.5). Ordenado por
   vencidos desc, depois ativos desc. Quem está com zero ativo aparece em
   destaque "sem chamado".
@@ -308,8 +351,10 @@ nota interna, nome de consultor fora do contexto "quem está atendendo".
   simples, documentada). Enquanto digita o título: "Parece com seu chamado
   #10612 (fechado em 12/10). É o mesmo problema?" com **Reabrir** ou **É
   outro**. Reabrir navega para o chamado e abre o diálogo de reabertura (§5.4)
-  com o motivo pré-preenchido pela descrição digitada; ao confirmar, a
-  descrição também vai como mensagem. Regra em §6.4.
+  com o motivo pré-preenchido pela descrição digitada; ao confirmar, primeiro
+  `POST /status` (reabre), depois `POST /mensagens` com a descrição. Se o
+  segundo falhar: toast, chamado já reaberto, texto fica na caixa. Regra em
+  §6.4.
 - Detalhe (§5.4) com ações de cliente: responder; "Resolvido? Confirmar"
   (→ `fechado`, motivo automático); "Ainda não resolveu" e "Reabrir" (ambos
   → `em_atendimento`) abrem diálogo com campo "Conte o que aconteceu",
@@ -346,8 +391,7 @@ Tabela em `shared/utils/status.ts`: `transicoesPermitidas(status, perfil)`.
 Fora da tabela, a ação não aparece; se chegar ao servidor, `400`.
 
 Reabrir **não recria prazo**: mantém os originais e o detalhe mostra "reaberto
-em {data}". Decisão documentada. Defesa do `reducer`: reabertura de chamado sem
-`responsavel_id` (não ocorre no dado) vai para `aberto`.
+em {data}". Decisão documentada. `/atribuir` em `resolvido`/`fechado` → `400`.
 
 ### 6.2 SLA
 
@@ -427,9 +471,9 @@ bloquearia.
 - Ordenação/filtro das filas e agregados do gestor em `useMemo` sobre o cache.
 - `dados.json` via `import()` dinâmico dentro de `mock-server/db.ts`.
 - `useNow()` com intervalo próprio; componentes de badge assinam só ele.
-- `setQueryData` por evento, sem `invalidateQueries`. Caches: `['chamados']`
-  (lista), `['chamado', id]` (detalhe com mensagens e histórico),
-  `['historico']`. O `reducer` sabe atualizar os três.
+- `setQueryData` por evento, sem `invalidateQueries`; projeção do `Estado`
+  espelho para os três caches (§4.6). `['chamado', id]` só é atualizado se já
+  foi carregado; senão o `GET` traz tudo quando a tela abrir.
 
 ## 10. Testes (Vitest + Testing Library)
 
@@ -438,7 +482,10 @@ bloquearia.
    só com mensagem não interna de equipe.
 2. `handlers`: atribuir chamado `aberto` emite dois eventos; cliente responder
    em `aguardando_cliente` emite dois; pegar chamado com dono → `409`;
-   motivo vazio em transição manual → `400`.
+   motivo vazio em transição manual → `400`; `POST /chamados` preenche
+   número, grupo, prazos.
+2b. `socket.ts`: cliente não recebe mensagem interna nem chamado de outro
+   cliente; consultor não recebe chamado de outro grupo.
 3. `sla.ts`: faixas, pausa, vencido, prazo relevante, com relógio fixo.
 4. `status.ts`: tabela permite/bloqueia por perfil.
 5. `similaridade.ts`: acha #10612 para o título de #10614; não sugere título
