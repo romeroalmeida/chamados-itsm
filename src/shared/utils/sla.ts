@@ -67,3 +67,6 @@ export function ordenarEstouraPrimeiro(chamados: Chamado[], agoraMs: number): Ch
     return restanteMs(a, agoraMs) - restanteMs(b, agoraMs)
   })
 }
+
+export const TIPO_PRAZO: Record<TipoPrazo, string> = { primeira_resposta: 'primeira resposta', resolucao: 'resolução' }
+export interface ResumoAlerta { vencidos: number; proximaHora: number }

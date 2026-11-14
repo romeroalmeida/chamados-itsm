@@ -1,0 +1,25 @@
+.detalhe { display: grid; grid-template-rows: auto 1fr auto; height: 100%; min-height: 0; background: var(--cor-superficie); }
+.detalhe > [data-orientation] { display: grid; grid-template-rows: auto 1fr; min-height: 0; }
+.cabecalho { padding: var(--espaco-3) var(--espaco-4); border-bottom: 1px solid var(--cor-borda); display: grid; gap: var(--espaco-2); }
+.linhaTitulo { display: flex; align-items: center; gap: var(--espaco-3); flex-wrap: wrap; }
+.numero { color: var(--cor-texto-fraco); font-family: var(--fonte-mono); }
+.titulo { margin: 0; font-size: 16px; }
+.meta { display: flex; gap: var(--espaco-4); flex-wrap: wrap; color: var(--cor-texto-fraco); font-size: 13px; }
+.barraPrazo { padding: 6px 12px; border-radius: 6px; color: #fff; font-weight: 600; }
+.ultima_hora { background: var(--sla-ultima-hora); } .vencido { background: var(--sla-vencido); }
+.conversa { position: relative; overflow: auto; padding: var(--espaco-3) var(--espaco-4); }
+.mensagem { padding: var(--espaco-2) var(--espaco-3); border-radius: var(--raio); background: var(--cor-fundo); margin-bottom: var(--espaco-2); }
+.minha { background: #e9f0ff; }
+.interna { background: var(--cor-interna); border: 1px dashed var(--cor-interna-borda); }
+.autor { font-size: 12px; color: var(--cor-texto-fraco); display: flex; gap: var(--espaco-2); }
+.rotuloInterna { font-weight: 600; color: #8a6d00; }
+.avisoNova { position: sticky; bottom: 8px; display: flex; justify-content: center; }
+.caixa { border-top: 1px solid var(--cor-borda); padding: var(--espaco-3) var(--espaco-4); display: grid; gap: var(--espaco-2); }
+.caixaLinha { display: flex; gap: var(--espaco-2); align-items: center; flex-wrap: wrap; }
+.textarea { width: 100%; min-height: 72px; padding: 8px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); resize: vertical; }
+.textarea.interna { background: var(--cor-interna); }
+.acoes { display: flex; gap: var(--espaco-2); flex-wrap: wrap; }
+.historico { list-style: none; margin: 0; padding: var(--espaco-3) var(--espaco-4); display: grid; gap: var(--espaco-2); font-size: 13px; }
+.historico li { display: grid; grid-template-columns: 110px 1fr; gap: var(--espaco-2); }
+.quando { color: var(--cor-texto-fraco); }
+.passos { display: flex; gap: var(--espaco-2); flex-wrap: wrap; padding: var(--espaco-2) var(--espaco-4); font-size: 13px; color: var(--cor-texto-fraco); border-bottom: 1px solid var(--cor-borda); }
