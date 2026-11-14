@@ -35,7 +35,7 @@ Fatos do `dados.json` que moldam o design:
 | Marina Almeida tem 42 chamados ativos | bate com o enunciado; é a persona consultora |
 | Helena Fernandes: `pt-PT`, `Europe/Lisbon`; par #10612 (fechado) / #10614 (aberto) com mesmo título | datas no fuso e locale do usuário; caso real da similaridade |
 | `meta.agora` = 2026-11-03T13:00:00Z | relógio virtual parte daí |
-| Em `agora`: 147 vencidos, 43 vencem em 4h, 76 pausados, 196 sem primeira resposta | faixas de SLA e ordenação "estoura primeiro" |
+| Em `agora`: 147 vencidos, 43 vencem em 4h, 76 pausados, 196 sem primeira resposta | faixas de SLA, ordenação "estoura primeiro" e alerta ativo (§5.1) |
 | `sla_pausado` = true exatamente nos 76 `aguardando_cliente` | pausa do SLA é derivada do status |
 | 82 pares (solicitante, título) repetidos | base para sugerir reabertura à Helena |
 | Histórico: 559 atribuições, cada uma acompanhada de um `aberto → em_atendimento`; 1 reabertura `fechado → em_atendimento` | atribuir emite dois eventos (§4.1); tabela de transições (§6.1) |
@@ -330,6 +330,24 @@ Fila:
 - Filtro por status; busca por número ou texto do título.
 - Ordenações alternativas: mais recente, cliente.
 
+**Alerta de prazo (ativo, não só cor).** A Marina não deve precisar procurar:
+
+- **Faixa fixa no topo da fila**: "3 chamados seus vencem na próxima hora · 2
+  já venceram". Clicar filtra a fila para esses. Só aparece quando há algo;
+  some quando não há.
+- **Toast ao cruzar faixa**: quando um chamado dela entra em `critico` (≤ 4h),
+  em `ultima_hora` (≤ 1h) ou em `vencido`, toast com número, título e tempo
+  restante, com botão "abrir". Um toast por chamado por faixa; não repete.
+  Disparado por `useNow()`, comparando a faixa anterior com a atual.
+- **Faixa dentro do chamado aberto**: cabeçalho ganha barra "vence em 38 min"
+  em âmbar (`ultima_hora`) ou "venceu há 1h 10" em vermelho (`vencido`), com o
+  tipo de prazo ("primeira resposta" ou "resolução").
+- **Contador na aba do navegador**: `document.title` = "(2) Chamados" com o
+  total de vencidos dela, para quem está em outra aba.
+
+Mesma mecânica, sem toast, para o Ricardo: a faixa no topo do painel soma os
+grupos dele.
+
 Chamado aberto (componente compartilhado, §5.4) com ações de consultor: pegar
 (se sem dono e do grupo dela), responder, nota interna, mudar status.
 
@@ -433,7 +451,10 @@ em {data}". Decisão documentada. `/atribuir` em `resolvido`/`fechado` → `400`
   pausado (simplificação documentada).
 - Faixas em `sla.ts`: `encerrado` se `status ∈ {resolvido, fechado}`;
   `pausado` se `sla_pausado`; senão por `prazoRelevante − agora`: `vencido`
-  (< 0), `critico` (≤ 4h), `atencao` (≤ 24h), `ok`. Tokens CSS por faixa.
+  (< 0), `ultima_hora` (≤ 1h), `critico` (≤ 4h), `atencao` (≤ 24h), `ok`.
+  Tokens CSS por faixa. `faixaMudou(anterior, atual)` em `sla.ts` diz se a
+  mudança merece alerta (só piora: ok → atencao não alerta; → critico,
+  ultima_hora, vencido alertam).
   Só `status` decide "encerrado"; `resolvido_em`/`fechado_em` nunca.
 - Chamado novo: prazos = `aberto_em` + horas do SLA da prioridade.
 
@@ -499,7 +520,9 @@ bloquearia.
 - Conversa e filas com `@tanstack/react-virtual`; conversa com `measureElement`.
 - Ordenação/filtro das filas e agregados do gestor em `useMemo` sobre o cache.
 - `dados.json` via `import()` dinâmico dentro de `mock-server/db.ts`.
-- `useNow()` com intervalo próprio; componentes de badge assinam só ele.
+- `useNow()` com intervalo próprio; componentes de badge assinam só ele. O
+  detector de alerta roda uma vez por tick sobre a lista da consultora
+  (≤ 50 itens), não por badge.
 - `setQueryData` por evento, sem `invalidateQueries`; projeção do `Estado`
   espelho para os três caches (§4.6). `['chamado', id]` só é atualizado se já
   foi carregado; senão o `GET` traz tudo quando a tela abrir.
@@ -515,7 +538,10 @@ bloquearia.
    número, grupo, prazos.
 2b. `socket.ts`: cliente não recebe mensagem interna nem chamado de outro
    cliente; consultor não recebe chamado de outro grupo.
-3. `sla.ts`: faixas, pausa, vencido, prazo relevante, com relógio fixo.
+3. `sla.ts`: faixas, pausa, vencido, prazo relevante, com relógio fixo;
+   `faixaMudou` alerta só em piora para crítico/última hora/vencido.
+3b. Alerta da fila: avançando o relógio fixo até um chamado cruzar 1h, aparece
+   toast e a faixa do topo conta 1; avançar de novo não repete o toast.
 4. `status.ts`: tabela permite/bloqueia por perfil.
 5. `similaridade.ts`: acha #10612 para o título de #10614; não sugere título
    sem palavra em comum; respeita 90 dias.
