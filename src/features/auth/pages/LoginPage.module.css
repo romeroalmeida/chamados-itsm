@@ -1,0 +1,7 @@
+.pagina { min-height: 100%; display: grid; place-items: center; padding: var(--espaco-4); }
+.cartao { width: min(400px, 100%); background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: var(--espaco-6); display: grid; gap: var(--espaco-4); }
+.titulo { margin: 0; font-size: 20px; }
+.personas { display: grid; gap: var(--espaco-2); }
+.persona { text-align: left; display: grid; }
+.persona small { color: var(--cor-texto-fraco); }
+.link { background: none; border: 0; color: var(--cor-primaria); padding: 0; text-decoration: underline; }
