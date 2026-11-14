@@ -122,6 +122,14 @@ afterEach(() => {
   globalThis.localStorage?.clear()
   globalThis.sessionStorage?.clear()
 })
+
+// Radix Select/Dialog em jsdom: APIs de ponteiro e layout que o jsdom não tem
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.releasePointerCapture ??= () => {}
+  Element.prototype.scrollIntoView ??= () => {}
+  globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} }
+}
 ```
 
 Em `tsconfig.app.json`, dentro de `compilerOptions`, garantir:
@@ -3692,6 +3700,8 @@ import { api } from '@/api/apiClient'
 import { chaves } from '@/api/queries/chaves'
 import { hidratar } from '@/api/realtime'
 import { Button, Campo } from '@/shared/components'
+import { lerUltimaVisita, marcarVisita } from '@/shared/hooks/useUltimaVisita'
+import { relogio } from '@/shared/utils/relogio'
 import { useSessao } from '@/state/sessao'
 import { ROTA_INICIAL } from '@/app/routes/RotaProtegida'
 import { entrar, PERSONAS, PIN_PADRAO } from '../services/entrar'
@@ -3710,6 +3720,8 @@ export function LoginPage() {
     mutationFn: () => entrar(email.trim(), pin),
     onSuccess(u) {
       guardar(u)
+      // primeira visita = agora (relógio virtual), spec §5.0; a faixa de novidades do cliente parte daqui
+      if (lerUltimaVisita(u.id) === null) marcarVisita(u.id, relogio.agora())
       // hidrata `usuarios` do espelho já no login (spec §4.6): o reducer precisa do perfil do autor
       void qc.prefetchQuery({ queryKey: chaves.usuarios, queryFn: async () => { const d = await api.get<Usuario[]>('/usuarios'); hidratar.usuarios(d); return d } })
       nav(loc.state?.de && loc.state.de !== '/' ? loc.state.de : ROTA_INICIAL[u.perfil], { replace: true })
@@ -3765,7 +3777,9 @@ git commit -m "feat: login por e-mail e PIN com atalho das três personas"
 ### Task 19: Detalhe do chamado compartilhado
 
 **Files:**
-- Create em `src/features/chamados/components/`: `CabecalhoChamado.tsx`, `Conversa.tsx`, `Conversa.test.tsx`, `CaixaResposta.tsx`, `AcoesStatus.tsx`, `HistoricoLista.tsx`, `BadgePrazo.tsx`, `DetalheChamado.tsx`, `detalhe.module.css`
+- Create em `src/features/chamados/components/`: `CabecalhoChamado.tsx`, `Conversa.tsx`, `Conversa.test.tsx`, `CaixaResposta.tsx`, `AcoesStatus.tsx`, `HistoricoLista.tsx`, `DetalheChamado.tsx`, `detalhe.module.css`
+- Create: `src/shared/components/BadgePrazo.tsx` (usado por `chamados` e `equipe`, por isso em `shared/`)
+- Modify: `src/shared/utils/sla.ts` (acrescentar `TIPO_PRAZO`), `src/shared/components/index.ts`
 - Create: `src/features/chamados/pages/ChamadoPage.tsx`, `src/features/chamados/utils/rotulos.ts`
 - Modify: `src/features/chamados/index.ts`
 
@@ -3782,19 +3796,21 @@ export function rotuloStatus(c: Chamado, perfil: Usuario['perfil'], nomeResponsa
   if (perfil !== 'cliente') return ROTULO_STATUS[c.status]
   return ROTULO_STATUS_CLIENTE[c.status].replace('{nome}', nomeResponsavel ?? 'nossa equipe')
 }
-
-export const TIPO_PRAZO = { primeira_resposta: 'primeira resposta', resolucao: 'resolução' } as const
+```
+Em `src/shared/utils/sla.ts` acrescentar (as duas features usam):
+```ts
+export const TIPO_PRAZO: Record<TipoPrazo, string> = { primeira_resposta: 'primeira resposta', resolucao: 'resolução' }
+export interface ResumoAlerta { vencidos: number; proximaHora: number }
 ```
 
-- [ ] **Step 2: Badge de prazo**
+- [ ] **Step 2: Badge de prazo (em `shared/`, porque `equipe` também usa)**
 
-`src/features/chamados/components/BadgePrazo.tsx`:
+`src/shared/components/BadgePrazo.tsx`:
 ```tsx
 import type { Chamado } from '@/shared/types'
-import { Badge } from '@/shared/components'
-import { faixaSla, prazoRelevante, restanteMs } from '@/shared/utils/sla'
+import { Badge } from './Badge'
+import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { formatarRelativo } from '@/shared/utils/datas'
-import { TIPO_PRAZO } from '../utils/rotulos'
 
 export function BadgePrazo({ chamado, agora }: { chamado: Chamado; agora: number }) {
   const faixa = faixaSla(chamado, agora)
@@ -3804,6 +3820,7 @@ export function BadgePrazo({ chamado, agora }: { chamado: Chamado; agora: number
   return <Badge faixa={faixa} title={`Prazo de ${TIPO_PRAZO[tipo]}`}>{formatarRelativo(restanteMs(chamado, agora))}</Badge>
 }
 ```
+Acrescentar em `src/shared/components/index.ts`: `export { BadgePrazo } from './BadgePrazo'`.
 
 - [ ] **Step 3: Teste da conversa (aviso de mensagem nova sem rolar)**
 
@@ -3996,16 +4013,25 @@ export function CaixaResposta({ chamadoId, usuario, onDigitando, textoInicial = 
 import { useState } from 'react'
 import type { Chamado, Status, Usuario, UsuarioConsultor } from '@/shared/types'
 import { Button, Campo, Dialog, Select, useToast } from '@/shared/components'
-import { useAtribuir, useMudarStatus } from '@/api/queries'
+import { useAtribuir, useEnviarMensagem, useMudarStatus } from '@/api/queries'
 import { ehReabertura, motivoAutomatico, ROTULO_ACAO, transicoesPermitidas } from '@/shared/utils/status'
 import s from './detalhe.module.css'
 
-interface Props { chamado: Chamado; usuario: Usuario; consultoresDoGrupo: UsuarioConsultor[]; reabrirInicial?: string }
+interface Props {
+  chamado: Chamado
+  usuario: Usuario
+  consultoresDoGrupo: UsuarioConsultor[]
+  /** Fluxo "Reabrir esse" da Helena (spec §5.3): abre o diálogo já com o texto; ao confirmar, reabre e manda o texto como mensagem. */
+  reabrirInicial?: string
+  /** Chamado quando o segundo POST (mensagem) falha: o texto volta para a caixa de resposta. */
+  onMensagemFalhou?: (texto: string) => void
+}
 
 /** Menu de ações filtrado por §6.1 e §7. Toda transição manual abre diálogo com motivo obrigatório. */
-export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInicial }: Props) {
+export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInicial, onMensagemFalhou }: Props) {
   const { notificar } = useToast()
   const mudar = useMudarStatus(chamado.id)
+  const enviarMensagem = useEnviarMensagem(chamado.id)
   const atribuir = useAtribuir()
   const [alvo, setAlvo] = useState<Status | null>(reabrirInicial !== undefined ? 'em_atendimento' : null)
   const [motivo, setMotivo] = useState(reabrirInicial ?? '')
@@ -4025,7 +4051,19 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
   }
   const confirmar = () => {
     if (!alvo || !motivo.trim()) return
-    mudar.mutate({ para: alvo, motivo: motivo.trim() }, { onSuccess: () => setAlvo(null), onError: erro })
+    const texto = motivo.trim()
+    mudar.mutate({ para: alvo, motivo: texto }, {
+      onSuccess() {
+        setAlvo(null)
+        // ordem obrigatória (spec §5.3): primeiro /status, depois /mensagens
+        if (reabrirInicial !== undefined) {
+          enviarMensagem.mutate({ texto, interna: false }, {
+            onError() { notificar({ titulo: 'Reaberto, mas a mensagem não foi enviada', descricao: 'O texto ficou na caixa de resposta.', tipo: 'alerta' }); onMensagemFalhou?.(texto) },
+          })
+        }
+      },
+      onError: erro,
+    })
   }
   const rotulo = (para: Status) => {
     const base = ROTULO_ACAO[`${chamado.status}>${para}`] ?? para
@@ -4097,11 +4135,10 @@ export function PassosCliente({ historico, usuario }: { historico: Historico[]; 
 `src/features/chamados/components/CabecalhoChamado.tsx`:
 ```tsx
 import type { Chamado, Usuario } from '@/shared/types'
-import { Badge } from '@/shared/components'
-import { faixaSla, prazoRelevante, restanteMs } from '@/shared/utils/sla'
+import { Badge, BadgePrazo } from '@/shared/components'
+import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { formatarDiaHora, formatarRelativo } from '@/shared/utils/datas'
-import { rotuloStatus, TIPO_PRAZO } from '../utils/rotulos'
-import { BadgePrazo } from './BadgePrazo'
+import { rotuloStatus } from '../utils/rotulos'
 import s from './detalhe.module.css'
 
 interface Props { chamado: Chamado; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; reabertoEm?: string; categoria?: string }
@@ -4157,15 +4194,17 @@ import { Conversa } from './Conversa'
 import { HistoricoLista, PassosCliente } from './HistoricoLista'
 import s from './detalhe.module.css'
 
-interface Props { id: string; usuario: Usuario; reabrirInicial?: string; textoInicial?: string }
+interface Props { id: string; usuario: Usuario; reabrirInicial?: string }
 
-export function DetalheChamado({ id, usuario, reabrirInicial, textoInicial }: Props) {
+export function DetalheChamado({ id, usuario, reabrirInicial }: Props) {
   const q = useChamado(id)
   const usuarios = useMapaUsuarios()
   const categorias = useCategorias().data ?? []
   const agora = useNow()
   const [digitando, setDigitando] = useState(false)
   const [aba, setAba] = useState('conversa')
+  // só recebe texto quando o envio automático da reabertura falha (spec §5.3)
+  const [textoCaixa, setTextoCaixa] = useState('')
   const [, marcarVisita] = useUltimaVisita(usuario.id, id)
   // marca "vi este chamado" sempre que a conversa cresce enquanto estou nele; relógio VIRTUAL, o mesmo de atualizado_em
   const totalMensagens = q.data?.mensagens.length
@@ -4183,7 +4222,7 @@ export function DetalheChamado({ id, usuario, reabrirInicial, textoInicial }: Pr
       <div>
         <CabecalhoChamado chamado={chamado} usuario={usuario} usuarios={usuarios} agora={agora} reabertoEm={reabertoEm} categoria={cliente ? undefined : categorias.find((c) => c.id === chamado.categoria_id)?.nome} />
         <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--cor-borda)' }}>
-          <AcoesStatus chamado={chamado} usuario={usuario} consultoresDoGrupo={consultoresDoGrupo} reabrirInicial={reabrirInicial} />
+          <AcoesStatus chamado={chamado} usuario={usuario} consultoresDoGrupo={consultoresDoGrupo} reabrirInicial={reabrirInicial} onMensagemFalhou={setTextoCaixa} />
         </div>
         {cliente && <PassosCliente historico={historico} usuario={usuario} />}
       </div>
@@ -4196,7 +4235,7 @@ export function DetalheChamado({ id, usuario, reabrirInicial, textoInicial }: Pr
               : <HistoricoLista historico={historico} usuarios={usuarios} usuario={usuario} />}
           </Tabs>
         )}
-      <CaixaResposta chamadoId={chamado.id} usuario={usuario} onDigitando={setDigitando} textoInicial={textoInicial} />
+      <CaixaResposta key={textoCaixa} chamadoId={chamado.id} usuario={usuario} onDigitando={setDigitando} textoInicial={textoCaixa} />
     </article>
   )
 }
@@ -4215,11 +4254,11 @@ export function ChamadoPage() {
   const usuario = useSessao((s) => s.usuario)!
   const loc = useLocation() as { state?: { reabrir?: string } }
   if (!id) return null
-  return <div style={{ height: '100%' }}><DetalheChamado id={id} usuario={usuario} reabrirInicial={loc.state?.reabrir} textoInicial={loc.state?.reabrir} /></div>
+  return <div style={{ height: '100%' }}><DetalheChamado id={id} usuario={usuario} reabrirInicial={loc.state?.reabrir} /></div>
 }
 ```
 
-`src/features/chamados/index.ts`: exportar `ChamadoPage`, `DetalheChamado`, `BadgePrazo`, e manter os stubs de `FilaConsultorPage`, `MeusChamadosPage`, `NovoChamadoPage` até as Tasks 20 a 22.
+`src/features/chamados/index.ts`: exportar `ChamadoPage` e `DetalheChamado`, e manter os stubs de `FilaConsultorPage`, `MeusChamadosPage`, `NovoChamadoPage` até as Tasks 20 a 22.
 
 - [ ] **Step 5: Rodar**
 
@@ -4246,7 +4285,7 @@ git commit -m "feat: detalhe de chamado compartilhado com conversa virtualizada,
 ### Task 20: Fila da consultora com alerta de SLA
 
 **Files:**
-- Create: `src/features/chamados/utils/fila.ts`, `src/features/chamados/utils/fila.test.ts`, `src/features/chamados/hooks/useAlertaSla.ts`, `src/features/chamados/hooks/useAlertaSla.test.tsx`, `src/features/chamados/components/FaixaAlerta.tsx`, `src/features/chamados/components/LinhaChamado.tsx`, `src/features/chamados/components/ListaChamados.tsx`, `src/features/chamados/pages/FilaConsultorPage.tsx` (+ `.module.css`)
+- Create: `src/features/chamados/utils/fila.ts`, `src/features/chamados/utils/fila.test.ts`, `src/features/chamados/hooks/useAlertaSla.ts`, `src/features/chamados/hooks/useAlertaSla.test.tsx`, `src/shared/components/FaixaAlerta.tsx` (usada por `chamados` e `equipe`), `src/features/chamados/components/LinhaChamado.tsx`, `src/features/chamados/components/ListaChamados.tsx`, `src/features/chamados/pages/FilaConsultorPage.tsx` (+ `.module.css`)
 - Modify: `src/features/chamados/index.ts`
 
 Spec §5.1.
@@ -4275,10 +4314,14 @@ describe('filtrarFila', () => {
     expect(r.every((c) => c.status === 'aberto' && c.grupo_id === grupo)).toBe(true)
   })
   it('status "todos" inclui encerrados; busca por número', () => {
-    const todos = filtrarFila(DADOS.chamados, MARINA, { ...base, status: 'todos' }, AGORA_MS)
-    expect(todos.length).toBeGreaterThan(42)
-    const alvo = todos[0]!
-    expect(filtrarFila(DADOS.chamados, MARINA, { ...base, status: 'todos', busca: String(alvo.numero) }, AGORA_MS)).toEqual([alvo])
+    // no arquivo a Marina não tem nenhum encerrado; injeta um
+    const fechado = { ...DADOS.chamados.find((c) => c.responsavel_id === MARINA.id)!, id: 'fechado-x', numero: 1, status: 'fechado' as const }
+    const comFechado = [...DADOS.chamados, fechado]
+    expect(filtrarFila(comFechado, MARINA, base, AGORA_MS)).toHaveLength(42)
+    const todos = filtrarFila(comFechado, MARINA, { ...base, status: 'todos' }, AGORA_MS)
+    expect(todos).toHaveLength(43)
+    expect(todos.at(-1)!.id).toBe('fechado-x') // encerrado vai para o fim
+    expect(filtrarFila(comFechado, MARINA, { ...base, status: 'todos', busca: '1' }, AGORA_MS).some((c) => c.id === 'fechado-x')).toBe(true)
   })
 })
 ```
@@ -4294,7 +4337,9 @@ export type OrdemFila = 'estoura' | 'recente' | 'cliente'
 export interface FiltroFila { aba: AbaFila; status: FiltroStatus; busca: string; ordem: OrdemFila }
 
 export function filtrarFila(chamados: Chamado[], usuario: Usuario, f: FiltroFila, agoraMs: number, nomes: Record<string, string> = {}): Chamado[] {
-  let lista = chamados.filter((c) => f.aba === 'meus' ? c.responsavel_id === usuario.id : c.status === 'aberto' && c.responsavel_id === null)
+  let lista = chamados.filter((c) => f.aba === 'meus'
+    ? c.responsavel_id === usuario.id
+    : c.status === 'aberto' && c.responsavel_id === null && (usuario.perfil !== 'consultor' || c.grupo_id === usuario.grupo_id))
   if (f.status === 'ativos') lista = lista.filter((c) => !ehEncerrado(c))
   else if (f.status !== 'todos') lista = lista.filter((c) => c.status === f.status)
   const q = f.busca.trim().toLowerCase()
@@ -4347,9 +4392,7 @@ describe('useAlertaSla', () => {
 ```ts
 import { useEffect, useMemo, useRef } from 'react'
 import type { Chamado } from '@/shared/types'
-import { faixaMudou, faixaSla, type Faixa } from '@/shared/utils/sla'
-
-export interface ResumoAlerta { vencidos: number; proximaHora: number }
+import { faixaMudou, faixaSla, type Faixa, type ResumoAlerta } from '@/shared/utils/sla'
 
 /** Spec §5.1: roda uma vez por tick sobre a lista, alerta só em piora para faixa de alerta, uma vez por chamado por faixa. */
 export function useAlertaSla(chamados: Chamado[], agora: number, alertar: (c: Chamado, faixa: Faixa) => void): ResumoAlerta {
@@ -4377,9 +4420,9 @@ Run: `pnpm test src/features/chamados/hooks` → PASS
 
 - [ ] **Step 3: Componentes da fila**
 
-`src/features/chamados/components/FaixaAlerta.tsx`:
+`src/shared/components/FaixaAlerta.tsx` (exportar em `shared/components/index.ts`):
 ```tsx
-import type { ResumoAlerta } from '../hooks/useAlertaSla'
+import type { ResumoAlerta } from '@/shared/utils/sla'
 
 interface Props { resumo: ResumoAlerta; onFiltrar?: (qual: 'vencidos' | 'proximaHora') => void; sufixo?: string }
 
@@ -4403,9 +4446,8 @@ export function FaixaAlerta({ resumo, onFiltrar, sufixo = 'seus' }: Props) {
 ```tsx
 import { memo } from 'react'
 import type { Chamado } from '@/shared/types'
-import { Badge } from '@/shared/components'
+import { Badge, BadgePrazo } from '@/shared/components'
 import { ROTULO_STATUS } from '@/shared/utils/status'
-import { BadgePrazo } from './BadgePrazo'
 
 interface Props { chamado: Chamado; agora: number; nomeCliente: string; ativo: boolean; temNovidade: boolean; onAbrir: (id: string) => void }
 
@@ -4484,13 +4526,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import type { Chamado, UsuarioConsultor } from '@/shared/types'
 import { useChamados, useMapaUsuarios } from '@/api/queries'
-import { Carregando, Erro, Select, Tabs, useToast } from '@/shared/components'
+import { Carregando, Erro, FaixaAlerta, Select, Tabs, useToast } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { formatarRelativo } from '@/shared/utils/datas'
-import { restanteMs, type Faixa } from '@/shared/utils/sla'
+import { faixaSla, restanteMs, type Faixa } from '@/shared/utils/sla'
 import { useSessao } from '@/state/sessao'
 import { DetalheChamado } from '../components/DetalheChamado'
-import { FaixaAlerta } from '../components/FaixaAlerta'
 import { ListaChamados } from '../components/ListaChamados'
 import { useAlertaSla } from '../hooks/useAlertaSla'
 import { filtrarFila, type AbaFila, type FiltroFila, type FiltroStatus, type OrdemFila } from '../utils/fila'
@@ -4524,8 +4565,8 @@ export function FilaConsultorPage() {
 
   const lista = useMemo(() => {
     let r = filtrarFila(todos, usuario, filtro, agora, nomes)
-    if (soAlerta === 'vencidos') r = r.filter((c) => restanteMs(c, agora) < 0 && !c.sla_pausado)
-    if (soAlerta === 'proximaHora') r = r.filter((c) => { const m = restanteMs(c, agora); return m >= 0 && m <= 3_600_000 && !c.sla_pausado })
+    if (soAlerta === 'vencidos') r = r.filter((c) => faixaSla(c, agora) === 'vencido')
+    if (soAlerta === 'proximaHora') r = r.filter((c) => faixaSla(c, agora) === 'ultima_hora')
     return r
   }, [todos, usuario, filtro, agora, nomes, soAlerta])
 
@@ -4606,6 +4647,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastProvider } from '@/shared/components'
 import { NovoChamadoPage } from './NovoChamadoPage'
 import { useSessao } from '@/state/sessao'
 import { DADOS, HELENA, chamadoPorNumero } from '@/tests/fixtures/dados'
@@ -4626,14 +4668,15 @@ describe('NovoChamadoPage', () => {
 
   it('ao digitar o título de #10614 sugere reabrir #10612', async () => {
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider client={new QueryClient()}><ToastProvider>
         <MemoryRouter initialEntries={['/meus-chamados/novo']}>
           <Routes><Route path="/meus-chamados/novo" element={<NovoChamadoPage />} /><Route path="/chamados/:id" element={<p>detalhe</p>} /></Routes>
         </MemoryRouter>
-      </QueryClientProvider>,
+      </ToastProvider></QueryClientProvider>,
     )
     await userEvent.type(await screen.findByLabelText(/título/i), chamadoPorNumero(10614).titulo)
-    expect(await screen.findByText(/parece com seu chamado #10612/i)).toBeInTheDocument()
+    // o número fica dentro de <strong>: matcher por texto não cruza elementos
+    expect(await screen.findByRole('status')).toHaveTextContent(/parece com seu chamado #10612/i)
     await userEvent.click(screen.getByRole('button', { name: /reabrir/i }))
     expect(await screen.findByText('detalhe')).toBeInTheDocument()
   })
@@ -4651,7 +4694,7 @@ import { rotuloStatus } from '../utils/rotulos'
 
 interface Props { chamados: Chamado[]; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }
 
-/** Spec §5.3: o que mudou desde a última visita. Primeira visita: nada (login marca a visita). */
+/** Spec §5.3: o que mudou desde a última visita. A LoginPage grava a primeira visita (spec §5.0); sem registro, nada. */
 export function Novidades({ chamados, usuario, usuarios, agora, onAbrir }: Props) {
   const [ultima, marcar] = useUltimaVisita(usuario.id)
   if (ultima === null) return null
@@ -4693,10 +4736,10 @@ import { useChamados, useMapaUsuarios } from '@/api/queries'
 import { Button, Carregando, Erro, Vazio } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { formatarDiaHora } from '@/shared/utils/datas'
-import { ehEncerrado, prazoRelevante, restanteMs } from '@/shared/utils/sla'
+import { ehEncerrado, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { useSessao } from '@/state/sessao'
 import { Novidades } from '../components/Novidades'
-import { rotuloStatus, TIPO_PRAZO } from '../utils/rotulos'
+import { rotuloStatus } from '../utils/rotulos'
 import s from './MeusChamadosPage.module.css'
 
 export function MeusChamadosPage() {
@@ -4805,7 +4848,36 @@ export function NovoChamadoPage() {
 }
 ```
 
-Ajuste no `DetalheChamado` para o fluxo "Reabrir esse": quando `reabrirInicial` vem, o diálogo de reabertura já abre com o texto; ao confirmar, a `AcoesStatus` deve, depois do `status`, enviar a descrição como mensagem. Implementar em `AcoesStatus.confirmar`: se `reabrirInicial !== undefined`, no `onSuccess` do `mudar` chamar `useEnviarMensagem(chamado.id).mutate({ texto: motivo, interna: false })` com `onError` → toast "Reaberto, mas a mensagem não foi enviada. O texto ficou na caixa." (o `textoInicial` da `CaixaResposta` já tem o texto). Adicionar o hook `useEnviarMensagem` no topo da `AcoesStatus`.
+O fluxo "Reabrir esse" (dois POSTs em ordem, texto volta para a caixa se o segundo falhar) já está em `AcoesStatus` e `DetalheChamado` (Task 19). Teste da ordem, `src/features/chamados/components/AcoesStatus.test.tsx`:
+```tsx
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastProvider } from '@/shared/components'
+import { AcoesStatus } from './AcoesStatus'
+import { useSessao } from '@/state/sessao'
+import { DADOS, HELENA, chamadoPorNumero } from '@/tests/fixtures/dados'
+
+it('reabrir pela sugestão: POST /status e depois POST /mensagens; falha do segundo devolve o texto', async () => {
+  useSessao.getState().entrar(HELENA)
+  const chamadas: string[] = []
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    const u = String(url); chamadas.push(u)
+    if (u.endsWith('/mensagens')) return new Response(JSON.stringify({ codigo: 'x', mensagem: 'falhou' }), { status: 500 })
+    return new Response('{"ok":true}', { status: 200 })
+  })
+  const falhou = vi.fn()
+  const fechado = chamadoPorNumero(10612)
+  render(<QueryClientProvider client={new QueryClient()}><ToastProvider>
+    <AcoesStatus chamado={fechado} usuario={HELENA} consultoresDoGrupo={[]} reabrirInicial="Voltou a acontecer" onMensagemFalhou={falhou} />
+  </ToastProvider></QueryClientProvider>)
+  await userEvent.click(screen.getByRole('button', { name: /^confirmar$/i }))
+  await waitFor(() => expect(chamadas.filter((c) => c.includes('/chamados/')).map((c) => c.split('/').at(-1))).toEqual(['status', 'mensagens']))
+  await waitFor(() => expect(falhou).toHaveBeenCalledWith('Voltou a acontecer'))
+  expect(DADOS.chamados.length).toBe(620)
+  vi.restoreAllMocks()
+})
+```
 
 Atualizar `index.ts` da feature com `MeusChamadosPage` e `NovoChamadoPage` reais.
 
@@ -4840,6 +4912,7 @@ Spec §5.2. Tudo calculado no cliente a partir de `useChamados()` + `useHistoric
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastProvider } from '@/shared/components'
 import { Redistribuir } from './Redistribuir'
 import { DADOS, MARINA, RICARDO } from '@/tests/fixtures/dados'
 import { useSessao } from '@/state/sessao'
@@ -4852,7 +4925,7 @@ describe('Redistribuir', () => {
     const daMarina = DADOS.chamados.filter((c) => c.responsavel_id === MARINA.id && c.status === 'em_atendimento').slice(0, 3)
     const grupo = MARINA.perfil === 'consultor' ? MARINA.grupo_id : ''
     const colegas = DADOS.usuarios.filter((u): u is UsuarioConsultor => u.perfil === 'consultor' && u.grupo_id === grupo && u.id !== MARINA.id)
-    render(<QueryClientProvider client={new QueryClient()}><Redistribuir chamados={daMarina} consultores={colegas} usuarios={{}} agora={Date.parse(DADOS.meta.agora)} onFechar={() => {}} /></QueryClientProvider>)
+    render(<QueryClientProvider client={new QueryClient()}><ToastProvider><Redistribuir chamados={daMarina} consultores={colegas} usuarios={{}} agora={Date.parse(DADOS.meta.agora)} onFechar={() => {}} /></ToastProvider></QueryClientProvider>)
     await userEvent.click(screen.getByLabelText(`Selecionar #${daMarina[0]!.numero}`))
     await userEvent.click(screen.getByLabelText(`Selecionar #${daMarina[1]!.numero}`))
     await userEvent.click(screen.getByRole('combobox', { name: /destino/i }))
@@ -4911,8 +4984,7 @@ export function CartaoConsultor({ a, grupo, onAbrir }: { a: AgregadoConsultor; g
 import { useState } from 'react'
 import type { Chamado, Usuario, UsuarioConsultor } from '@/shared/types'
 import { useAtribuir } from '@/api/queries'
-import { Button, Select, useToast } from '@/shared/components'
-import { BadgePrazo } from '@/features/chamados'
+import { BadgePrazo, Button, Select, useToast } from '@/shared/components'
 import s from '../pages/EquipePage.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; usuarios: Record<string, Usuario>; agora: number; onFechar: () => void }
@@ -4958,8 +5030,7 @@ export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar 
 ```tsx
 import type { Chamado, Grupo, Usuario, UsuarioConsultor } from '@/shared/types'
 import { useAtribuir } from '@/api/queries'
-import { Select, useToast } from '@/shared/components'
-import { BadgePrazo } from '@/features/chamados'
+import { BadgePrazo, Select, useToast } from '@/shared/components'
 import s from '../pages/EquipePage.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; grupos: Grupo[]; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }
@@ -4990,7 +5061,7 @@ export function FilaSemDono({ chamados, consultores, grupos, usuarios, agora, on
 `src/features/equipe/components/VencendoEmBreve.tsx`:
 ```tsx
 import type { Chamado, Usuario } from '@/shared/types'
-import { BadgePrazo } from '@/features/chamados'
+import { BadgePrazo } from '@/shared/components'
 import s from '../pages/EquipePage.module.css'
 
 export function VencendoEmBreve({ chamados, usuarios, agora, onAbrir }: { chamados: Chamado[]; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }) {
@@ -5019,8 +5090,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { UsuarioConsultor, UsuarioGestor } from '@/shared/types'
 import { useChamados, useGrupos, useHistorico, useMapaUsuarios } from '@/api/queries'
-import { Carregando, Erro } from '@/shared/components'
-import { FaixaAlerta } from '@/features/chamados'
+import { Carregando, Erro, FaixaAlerta } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { agregadosPorConsultor } from '@/shared/utils/equipe'
 import { ehEncerrado, faixaSla, ordenarEstouraPrimeiro } from '@/shared/utils/sla'
@@ -5080,7 +5150,7 @@ export function EquipePage() {
 }
 ```
 
-`src/features/equipe/index.ts`: `export { EquipePage } from './pages/EquipePage'`. Em `src/features/chamados/index.ts`, exportar também `FaixaAlerta` e `BadgePrazo` (uso cruzado passa pelo barrel; se a regra "feature não importa feature" incomodar, mover os dois para `shared/components/`; decidir no momento e registrar em `docs/decisoes.md`).
+`src/features/equipe/index.ts`: `export { EquipePage } from './pages/EquipePage'`. `equipe` não importa nada de `features/chamados`: `BadgePrazo` e `FaixaAlerta` vivem em `shared/components/` justamente porque as duas features usam (regra da arquitetura). Registrar em `docs/decisoes.md`.
 
 - [ ] **Step 4: Verificar**
 
@@ -5097,6 +5167,8 @@ git commit -m "feat: painel do gestor com carga por consultor, tempo ocioso, red
 ```
 
 **Fim do Chunk 3.** Os 6 requisitos do enunciado estão na tela.
+
+> Validação do chunk (14/11/2026): montado em rascunho sobre os Chunks 1 e 2; com as correções já incorporadas acima (fixture da fila, filtro por grupo, `ToastProvider` nos testes, polyfills do Radix em `setup.ts`, primeira visita gravada no login, `BadgePrazo`/`FaixaAlerta` em `shared/`), typecheck limpo e suíte verde. Não validado em navegador.
 
 ---
 
