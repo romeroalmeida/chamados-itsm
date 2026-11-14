@@ -41,7 +41,7 @@ Fatos do `dados.json` que moldam o design:
 | Histórico: 559 atribuições, cada uma acompanhada de um `aberto → em_atendimento`; 1 reabertura `fechado → em_atendimento` | atribuir emite dois eventos (§4.1); tabela de transições (§6.1) |
 | `historico.tipo = "atribuicao"` tem `de`/`para` nulos e `usuario_id` = consultor que **recebeu** | mapeamento do `reducer` (§4.6) |
 | Chamados reabertos mantêm `fechado_em`/`resolvido_em` preenchidos (ex.: #10611) | toda derivação usa `status`, nunca essas datas |
-| Mensagens: `interna` é `true` em 495 e `null` nas demais | tratar `null` como não interna |
+| Mensagens: `interna` é `true` em 495 e `false` em 2.886 | tratar ausente/`null` como não interna, por defesa |
 | `usuarios`: consultor tem `grupo_id`, gestor tem `grupos_ids`, cliente tem `empresa` | `Usuario` é união discriminada por `perfil` |
 
 Status possíveis: `aberto`, `em_atendimento`, `aguardando_cliente`, `resolvido`,
@@ -129,14 +129,14 @@ requisição leva header `X-Usuario-Id`. Sem token: é fake e documentado.
 | GET | `/chamados` | — | `Chamado[]` visíveis ao usuário (§7) | — |
 | GET | `/chamados/:id` | — | `{ chamado, mensagens, historico }` filtrado por perfil | — |
 | GET | `/historico` | — | `Historico[]` dos chamados visíveis (gestor e consultor) | — |
-| POST | `/chamados` | `{ titulo, descricao, categoria_id, solicitante_id? }` | `{ id }` | `chamado.aberto` |
+| POST | `/chamados` | `{ titulo, descricao, categoria_id }` | `{ id }` | `chamado.aberto` |
 | POST | `/chamados/:id/mensagens` | `{ texto, interna }` | `{ ok }` | `mensagem.adicionada`; **mais** `status.alterado` (`aguardando_cliente → em_atendimento`, motivo "Cliente respondeu") se autor é cliente e status era `aguardando_cliente` |
 | POST | `/chamados/:id/atribuir` | `{ consultor_id }` | `{ ok }` | `chamado.atribuido`; **mais** `status.alterado` (`aberto → em_atendimento`, motivo automático) se status era `aberto`. Em `em_atendimento`/`aguardando_cliente` (redistribuição) só o primeiro |
 | POST | `/chamados/:id/status` | `{ para, motivo }` | `{ ok }` | `status.alterado` |
 
-`solicitante_id` só é aceito de consultor (abrir em nome de cliente); para
-cliente é ignorado e forçado ao próprio id; gestor não abre chamado (`403`).
-O servidor preenche em `POST /chamados`: `numero` = maior + 1, `grupo_id` =
+Só cliente abre chamado (`403` para os demais); `solicitante_id` é o usuário
+da sessão. O servidor preenche em `POST /chamados`: `numero` = maior + 1,
+`grupo_id` =
 `categoria.grupo_id`, `prioridade` pela regra da §5.3, `status: 'aberto'`,
 `aberto_em`/`atualizado_em` do relógio virtual, prazos pela §6.2,
 `responsavel_id: null`, `sla_pausado: false`.
@@ -147,8 +147,10 @@ de status **sem `motivo`** e sem entradas de atribuição; equipe recebe tudo.
 
 Motivos automáticos são preenchidos pelo **servidor**: "Assumido para
 atendimento" (consultor pega), "Atribuído por {gestor}", "Cliente respondeu",
-"Confirmado pelo cliente" (resolvido → fechado via botão do cliente). Nas demais
-transições `motivo` é obrigatório e vazio dá `400`.
+"Confirmado pelo cliente" (cliente, `resolvido → fechado`: único caso em que
+`POST /status` aceita `motivo` vazio). Nas demais transições `motivo` é
+obrigatório e vazio dá `400`. `usuario_id` dos `status.alterado` derivados é
+o **ator**: quem pegou/atribuiu, ou o cliente que respondeu.
 
 Erros: `400` validação (motivo vazio, transição inválida, campo faltando),
 `401` sem sessão ou PIN errado, `403` perfil sem permissão, `404` não existe,
@@ -176,12 +178,14 @@ pode chegar mais de uma vez.
 
 1. Tela chama mutation → `POST` → MSW da aba de origem.
 2. Handler valida contra o `db` local, cria os eventos com `ocorrido_em` do
-   relógio virtual, **grava cada um no `eventLog`** (só a aba de origem grava),
-   aplica no `db` via `reducer`, publica no `bus`.
+   relógio virtual, **grava cada um no `eventLog`** (só a aba de origem grava)
+   e publica no `bus`.
 3. `bus.publicar` chama os assinantes **locais** diretamente e depois posta no
    `BroadcastChannel` (que não entrega à própria instância). Em cada aba, dois
    assinantes: `db.ts` (aplica no `db` daquela aba, com dedupe por `id`) e
-   `socket.ts`. Assim o handler de qualquer aba valida contra estado atualizado.
+   `socket.ts`, nessa ordem: `visivelPara` em `chamado.aberto` precisa do
+   chamado já no `db`. O handler **não** aplica no `db` diretamente: só
+   publica; `db.ts` aplica pela assinatura síncrona local. Um caminho só.
 4. `socket.ts` é o "servidor" do socket: aplica `visivelPara(usuario, chamado)`
    (a mesma função dos handlers, §7) ao usuário da sessão daquela aba e
    **descarta** evento de chamado invisível e `mensagem.adicionada` interna
@@ -212,7 +216,11 @@ Ligado por padrão. Painel discreto no rodapé: pausar/retomar, velocidade (1x,
 5x, 20x), "disparar evento agora", "resetar dados", contador de eventos
 recebidos e de duplicatas descartadas, indicador "esta aba simula / outra aba
 simula". Estado (ligado, velocidade) em `localStorage` para valer em todas as
-abas.
+abas; `velocidade` vive só em `itsm:relogio` (§4.5), fonte única.
+
+Duplicação proposital: `bus.publicar` em `bus.ts`, quando o simulador está
+ligado, reposta ~10% dos eventos uma segunda vez. Mudanças de status do
+simulador usam motivo fixo "Simulador: atualização de rotina".
 
 A cada intervalo (base 8 s em 1x, dividido pela velocidade) escolhe uma ação
 plausível e a executa com `fetch` **pelos mesmos handlers HTTP** da §4.1,
@@ -234,8 +242,10 @@ gravado na primeira carga. `agora() = inicioVirtual + (Date.now() − inicioReal
 × velocidade`. A velocidade do simulador **acelera também o relógio**: em 20x
 um prazo de 2h estoura em 6 min, visível na demo. Mudar a velocidade reancora
 (`inicioVirtual = agora()`, `inicioReal = Date.now()`) para não dar salto.
-`useNow()` reavalia a cada 30 s reais (ou 5 s em 20x). O `mock-server` usa a
-mesma função para carimbar eventos. "Resetar dados" apaga as chaves `itsm:*` e
+`agora()` lê `itsm:relogio` do `localStorage` a cada chamada, então reancorar
+numa aba vale nas outras na hora. `useNow()` reavalia a cada 30 s reais (ou 5 s
+em 20x) e ao evento `storage` da chave. O `mock-server` usa a mesma função
+para carimbar eventos. "Resetar dados" apaga as chaves `itsm:*` e
 recarrega: volta ao `dados.json` puro.
 
 ### 4.6 Reducer e estado
@@ -252,12 +262,22 @@ aplicar(estado: Estado, evento: Evento): Estado   // puro; devolve o mesmo objet
 ```
 
 `db.ts` guarda um `Estado` completo. `realtime.ts` guarda um `Estado` espelho
-(montado a partir das queries já carregadas; `usuarios` vem de `GET /usuarios`,
-carregado no login) e, após cada `aplicar`, **projeta** para os caches do
-TanStack Query: `['chamados']` ← `Object.values(chamados)` visíveis;
-`['chamado', id]` ← `{ chamado, mensagens[id], historico filtrado }`, só se esse
-cache já existe; `['historico']` ← `historico`. Projeção em `api/realtime.ts`,
-uma função por cache.
+com duas fontes de escrita, em ordem clara:
+
+- **Hidratação**: todo `GET` bem-sucedido **substitui** a fatia correspondente
+  do espelho (`GET /chamados` → `chamados` inteiro; `GET /chamados/:id` →
+  `chamados[id]`, `mensagens[id]` e as entradas de `historico` desse chamado;
+  `GET /historico` → `historico` inteiro; `GET /usuarios`, no login →
+  `usuarios`). Vale para a primeira carga e para todo refetch (foco, retry).
+- **Eventos**: após cada `aplicar`, **projeta** para os caches do TanStack
+  Query: `['chamados']` ← `Object.values(chamados)`; `['chamado', id]` ←
+  `{ chamado, mensagens[id], historico filtrado }`, só se esse cache já existe;
+  `['historico']` ← `historico`. Uma função por cache em `api/realtime.ts`.
+
+Evento cujo `chamado_id` não existe no espelho (corrida entre assinar o socket
+e o `GET` resolver) é no-op, exceto `chamado.aberto`, que insere. O `GET`
+seguinte traz o estado completo. `idsAplicados` continua registrando o id, para
+o dedupe.
 
 | Evento | Efeito |
 |---|---|
@@ -265,6 +285,9 @@ uma função por cache.
 | `chamado.atribuido` | `responsavel_id = consultor_id`, `atualizado_em = ocorrido_em`; **acrescenta** `historico { tipo: 'atribuicao', de: null, para: null, usuario_id: consultor_id, motivo: null }`. Último evento vence (fonte de verdade é o servidor, que barra o conflito com `409`) |
 | `mensagem.adicionada` | insere a mensagem; `atualizado_em`; se autor é consultor/gestor, `interna` falsa e `primeira_resposta_em` nulo → preenche com `criada_em` |
 | `status.alterado` | `status = para`, `atualizado_em`; `sla_pausado = (para === 'aguardando_cliente')`; `resolvido_em` ao entrar em `resolvido`, `fechado_em` ao entrar em `fechado` (não limpa ao reabrir, como no dado); **acrescenta** `historico { tipo: 'status', de, para, motivo, usuario_id }` |
+
+Entradas de `historico` criadas pelo reducer usam `id = evento.id` (1:1; serve
+de key e de dedupe).
 
 Status nunca muda por `chamado.atribuido` nem por `mensagem.adicionada`; o
 handler emite o `status.alterado` correspondente (§4.1). O reducer nunca
@@ -328,7 +351,8 @@ dele). Mudam sozinhos quando o cache muda por evento.
   `POST /atribuir` por chamado.
 - **Fila sem dono** dos grupos dele, com select de consultor na linha.
 - **Vencendo nas próximas 4h**, cruzando os dois grupos, ordenada por prazo.
-- Clicar num chamado abre o detalhe (§5.4) com ações de gestor.
+- Clicar num chamado abre o detalhe (§5.4) com ações de gestor: as mesmas do
+  consultor mais "Atribuir a…" (select de consultor do grupo do chamado).
 
 ### 5.3 Cliente — `/meus-chamados` (Helena)
 
@@ -344,12 +368,13 @@ nota interna, nome de consultor fora do contexto "quem está atendendo".
   `aguardando_cliente` → "aguardando sua resposta"; `resolvido` → "resolvido,
   aguardando sua confirmação"; `fechado` → "fechado"), e "previsão de resposta
   até terça, 14h" no fuso dela, usando o **prazo relevante da §6.2**; nada
-  quando pausado, resolvido ou fechado.
+  quando pausado, resolvido ou fechado; "em atraso" se o prazo já passou
+  (caso comum em chamado reaberto, que mantém prazos antigos).
 - **Abrir chamado** (`/meus-chamados/novo`): "O que parou?" (select com as 8
   categorias em nome amigável), título, descrição. Prioridade: `media` por
   padrão, `alta` se a categoria for Acesso e senhas ou Rede e VPN (regra interna
   simples, documentada). Enquanto digita o título: "Parece com seu chamado
-  #10612 (fechado em 12/10). É o mesmo problema?" com **Reabrir** ou **É
+  #10612 (fechado em 06/09). É o mesmo problema?" com **Reabrir** ou **É
   outro**. Reabrir navega para o chamado e abre o diálogo de reabertura (§5.4)
   com o motivo pré-preenchido pela descrição digitada; ao confirmar, primeiro
   `POST /status` (reabre), depois `POST /mensagens` com a descrição. Se o
@@ -381,10 +406,10 @@ com campo obrigatório.
 | De | Para | Quem | Motivo |
 |---|---|---|---|
 | aberto | em_atendimento | consultor pega; gestor atribui (via `/atribuir`) | automático pelo servidor |
-| em_atendimento | aguardando_cliente | consultor | obrigatório |
-| aguardando_cliente | em_atendimento | automático quando cliente responde; consultor | automático / obrigatório |
-| em_atendimento | resolvido | consultor | obrigatório |
-| resolvido | fechado | cliente confirma; consultor | automático / obrigatório |
+| em_atendimento | aguardando_cliente | consultor, gestor | obrigatório |
+| aguardando_cliente | em_atendimento | automático quando cliente responde; consultor, gestor | automático / obrigatório |
+| em_atendimento | resolvido | consultor, gestor | obrigatório |
+| resolvido | fechado | cliente confirma; consultor, gestor | automático / obrigatório |
 | resolvido, fechado | em_atendimento | qualquer perfil (reabertura) | obrigatório (cliente digita no diálogo) |
 
 Tabela em `shared/utils/status.ts`: `transicoesPermitidas(status, perfil)`.
@@ -439,7 +464,7 @@ ativo, limitado à janela. Exibido como "3h 20 ocioso na semana". Função
 |---|---|---|---|
 | Ver chamado | só os próprios | do próprio grupo | dos grupos que gere |
 | Ver nota interna, categoria, grupo, prioridade, histórico completo | não | sim | sim |
-| Abrir chamado | sim | sim (em nome de cliente: `solicitante_id`) | não |
+| Abrir chamado | sim | não (fora de escopo, §13) | não |
 | Pegar | não | sim, sem dono, do grupo | não |
 | Atribuir/redistribuir | não | não | sim |
 | Responder | sim | sim | sim (fora da rotina, não bloqueado) |
@@ -523,4 +548,5 @@ simulador e painel, README.
 Autenticação real, backend, anexos, notificações por e-mail, busca full-text,
 relatórios além do painel do gestor, internacionalização da interface (textos
 em pt-BR; só datas seguem o locale do usuário), e2e, mobile dedicado (layout
-responde, mas não é o alvo), extensão de prazo por tempo pausado.
+responde, mas não é o alvo), extensão de prazo por tempo pausado, consultor
+abrir chamado em nome de cliente.
