@@ -75,7 +75,7 @@ Feature-first, conforme a skill `front-architecture`.
 src/
 ├── app/
 │   ├── routes/            # rotas + guarda por perfil
-│   ├── providers/         # QueryProvider, RelogioProvider
+│   ├── providers/         # QueryProvider, RealtimeProvider
 │   └── layout/            # casca: topo com usuário, sair, painel do simulador
 ├── api/
 │   ├── apiClient.ts       # fetch tipado; não-2xx vira ApiError
@@ -86,9 +86,9 @@ src/
 │   ├── chamados/          # fila, detalhe, conversa, abrir, pegar, status, reabrir
 │   └── equipe/            # painel do gestor: carga, SLA, redistribuir, ocioso
 ├── shared/
-│   ├── components/        # Button, Badge, Dialog/Select/Tooltip (Radix), ListaVirtual, Toast
-│   ├── hooks/             # useNow(), useFusoDoUsuario(), useUltimaVisita()
-│   ├── utils/             # reducer.ts, sla.ts, status.ts, datas.ts, similaridade.ts, equipe.ts
+│   ├── components/        # Button, Badge, Dialog/Select/Toast/Tabs (Radix), BadgePrazo, FaixaAlerta, estados
+│   ├── hooks/             # useNow(), useUltimaVisita()
+│   ├── utils/             # reducer.ts, sla.ts, status.ts, visibilidade.ts, datas.ts, similaridade.ts, equipe.ts, relogio.ts, rotas.ts
 │   ├── styles/            # tokens.css, reset.css
 │   └── types/             # Chamado, Mensagem, Historico, Usuario (união), Grupo, Evento…
 ├── state/                 # Zustand: sessão (usuário logado), filtros de UI, simulador

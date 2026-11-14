@@ -48,7 +48,7 @@
 | `src/features/auth/*` | login |
 | `src/features/chamados/*` | detalhe compartilhado, fila da consultora, telas do cliente |
 | `src/features/equipe/*` | painel do gestor |
-| `src/shared/components/*` | Button, Badge, Dialog, Select, Toast, Tabs, ListaVirtual |
+| `src/shared/components/*` | Button, Badge, Dialog, Select, Toast, Tabs, BadgePrazo, FaixaAlerta, Estado (Carregando/Vazio/Erro) |
 | `src/shared/hooks/*` | `useNow`, `useUltimaVisita` |
 
 ---
@@ -74,7 +74,7 @@ Quando perguntar sobre a pasta não vazia, escolher "Ignore files and continue".
 
 ```bash
 echo 24 > .nvmrc
-pnpm add react@^19.3.0 react-dom@^19.3.0 react-router@^7.18.0 @tanstack/react-query@^5.107.0 @tanstack/react-virtual@^3.14.0 zustand@^5.1.0 @radix-ui/react-dialog@^1.3.0 @radix-ui/react-select@^2.4.0 @radix-ui/react-tooltip@^1.4.0 @radix-ui/react-toast@^1.3.0 @radix-ui/react-tabs@^1.2.0
+pnpm add react@^19.3.0 react-dom@^19.3.0 react-router@^7.18.0 @tanstack/react-query@^5.107.0 @tanstack/react-virtual@^3.14.0 zustand@^5.1.0 @radix-ui/react-dialog@^1.3.0 @radix-ui/react-select@^2.4.0 @radix-ui/react-toast@^1.3.0 @radix-ui/react-tabs@^1.2.0
 pnpm add -D vite@^8.3.0 @vitejs/plugin-react@^6.3.0 typescript@~5.9.0 @types/react@^19.3.0 @types/react-dom@^19.3.0 @types/node@^24 msw@^2.15.0 vitest@^4.1.0 jsdom@^31 @testing-library/react@^16.3.0 @testing-library/user-event@^14.6.0 @testing-library/jest-dom@^7.0.0
 ```
 
@@ -116,11 +116,14 @@ import '@testing-library/jest-dom/vitest'
 import { afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
-afterEach(() => {
+afterEach(async () => {
   cleanup()
   // handlers.test.ts roda em ambiente node, sem Storage
   globalThis.localStorage?.clear()
   globalThis.sessionStorage?.clear()
+  // o store de sessão é singleton de módulo: sem isto um teste que "entra" vaza para o seguinte
+  const { useSessao } = await import('@/state/sessao')
+  useSessao.setState({ usuario: null })
 })
 
 // Radix Select/Dialog em jsdom: APIs de ponteiro e layout que o jsdom não tem
@@ -3399,13 +3402,18 @@ export function useRealtime(): Ctx {
 
 - [ ] **Step 4: Rotas e guarda**
 
+`src/shared/utils/rotas.ts` (em `shared/` porque `features/` também usa; feature não importa de `app/`):
+```ts
+import type { Perfil } from '@/shared/types'
+export const ROTA_INICIAL: Record<Perfil, string> = { consultor: '/fila', gestor: '/equipe', cliente: '/meus-chamados' }
+```
+
 `src/app/routes/RotaProtegida.tsx`:
 ```tsx
 import { Link, Navigate, Outlet, useLocation } from 'react-router'
 import type { Perfil } from '@/shared/types'
+import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { useSessao } from '@/state/sessao'
-
-export const ROTA_INICIAL: Record<Perfil, string> = { consultor: '/fila', gestor: '/equipe', cliente: '/meus-chamados' }
 
 export function RotaProtegida({ perfis }: { perfis?: Perfil[] }) {
   const usuario = useSessao((s) => s.usuario)
@@ -3430,8 +3438,9 @@ import { LoginPage } from '@/features/auth'
 import { ChamadoPage, FilaConsultorPage, MeusChamadosPage, NovoChamadoPage } from '@/features/chamados'
 import { EquipePage } from '@/features/equipe'
 import { useSessao } from '@/state/sessao'
+import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { Casca } from '../layout/Casca'
-import { RotaProtegida, ROTA_INICIAL } from './RotaProtegida'
+import { RotaProtegida } from './RotaProtegida'
 
 function Raiz() {
   const usuario = useSessao((s) => s.usuario)
@@ -3603,7 +3612,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoginPage } from './LoginPage'
 import { useSessao } from '@/state/sessao'
-import { HELENA, MARINA } from '@/tests/fixtures/dados'
+import { HELENA, MARINA, RICARDO } from '@/tests/fixtures/dados'
 
 function montar() {
   const qc = new QueryClient()
@@ -3613,6 +3622,7 @@ function montar() {
         <Routes>
           <Route path="/entrar" element={<LoginPage />} />
           <Route path="/fila" element={<p>tela da fila</p>} />
+          <Route path="/equipe" element={<p>tela da equipe</p>} />
           <Route path="/meus-chamados" element={<p>tela do cliente</p>} />
         </Routes>
       </MemoryRouter>
@@ -3641,6 +3651,15 @@ describe('LoginPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
     await waitFor(() => expect(screen.getByText('tela da fila')).toBeInTheDocument())
     expect(useSessao.getState().usuario?.id).toBe(MARINA.id)
+  })
+
+  it('gestor entra e vai para /equipe', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(RICARDO), { status: 200 }))
+    montar()
+    await userEvent.type(screen.getByLabelText(/e-mail/i), RICARDO.email)
+    await userEvent.type(screen.getByLabelText(/pin/i), '123456')
+    await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
+    await waitFor(() => expect(screen.getByText('tela da equipe')).toBeInTheDocument())
   })
 
   it('cliente entra e vai para /meus-chamados', async () => {
@@ -3703,7 +3722,7 @@ import { Button, Campo } from '@/shared/components'
 import { lerUltimaVisita, marcarVisita } from '@/shared/hooks/useUltimaVisita'
 import { relogio } from '@/shared/utils/relogio'
 import { useSessao } from '@/state/sessao'
-import { ROTA_INICIAL } from '@/app/routes/RotaProtegida'
+import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { entrar, PERSONAS, PIN_PADRAO } from '../services/entrar'
 import s from './LoginPage.module.css'
 
@@ -3966,7 +3985,7 @@ export function Conversa({ mensagens, usuarios, usuario, digitando }: Props) {
 
 `src/features/chamados/components/CaixaResposta.tsx`:
 ```tsx
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Usuario } from '@/shared/types'
 import { Button, useToast } from '@/shared/components'
 import { useEnviarMensagem } from '@/api/queries'
@@ -3976,6 +3995,8 @@ interface Props { chamadoId: string; usuario: Usuario; onDigitando(v: boolean): 
 
 export function CaixaResposta({ chamadoId, usuario, onDigitando, textoInicial = '' }: Props) {
   const [texto, setTexto] = useState(textoInicial)
+  // texto devolvido após falha do envio automático conta como "digitando" (não rolar a conversa)
+  useEffect(() => { if (textoInicial.trim()) onDigitando(true) }, [textoInicial, onDigitando])
   const [interna, setInterna] = useState(false)
   const { notificar } = useToast()
   const enviar = useEnviarMensagem(chamadoId)
@@ -4474,13 +4495,14 @@ import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { Chamado, Usuario } from '@/shared/types'
 import { Vazio } from '@/shared/components'
-import { lerUltimaVisita } from '@/shared/hooks/useUltimaVisita'
+import { lerUltimaVisita, useUltimaVisita } from '@/shared/hooks/useUltimaVisita'
 import { LinhaChamado } from './LinhaChamado'
 
 interface Props { chamados: Chamado[]; agora: number; usuario: Usuario; usuarios: Record<string, Usuario>; ativoId?: string; onAbrir: (id: string) => void; vazio: string }
 
 export function ListaChamados({ chamados, agora, usuario, usuarios, ativoId, onAbrir, vazio }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  useUltimaVisita(usuario.id) // assina o store de visitas: o ponto azul some assim que o chamado é aberto
   const v = useVirtualizer({ count: chamados.length, getScrollElement: () => ref.current, estimateSize: () => 64, overscan: 10 })
   if (chamados.length === 0) return <Vazio texto={vazio} />
   return (
@@ -4706,7 +4728,12 @@ export function Novidades({ chamados, usuario, usuarios, agora, onAbrir }: Props
       <ul style={{ margin: 0, paddingLeft: 18 }}>
         {mudaram.map((c) => {
           const resp = c.responsavel_id ? usuarios[c.responsavel_id]?.nome : undefined
-          return <li key={c.id}><button onClick={() => onAbrir(c.id)} style={{ background: 'none', border: 0, padding: 0, color: 'var(--cor-primaria)', textDecoration: 'underline' }}>#{c.numero} {c.titulo}</button>: {rotuloStatus(c, 'cliente', resp)}</li>
+          // spec §5.3: "Rafael respondeu", "Resolvido, confirme". A lista só tem o chamado, não a mensagem; o texto deriva do status.
+          const novidade = c.status === 'resolvido' ? 'resolvido, confirme'
+            : c.status === 'aguardando_cliente' ? `${resp ?? 'a equipe'} respondeu e aguarda você`
+            : c.status === 'em_atendimento' ? `${resp ?? 'a equipe'} atualizou`
+            : c.status === 'fechado' ? 'fechado' : rotuloStatus(c, 'cliente', resp)
+          return <li key={c.id}><button onClick={() => onAbrir(c.id)} style={{ background: 'none', border: 0, padding: 0, color: 'var(--cor-primaria)', textDecoration: 'underline' }}>#{c.numero} {c.titulo}</button>: {novidade}</li>
         })}
       </ul>
       <div><Button pequeno onClick={() => marcar(agora)}>Entendi</Button></div>
@@ -4879,7 +4906,14 @@ it('reabrir pela sugestão: POST /status e depois POST /mensagens; falha do segu
 })
 ```
 
-Atualizar `index.ts` da feature com `MeusChamadosPage` e `NovoChamadoPage` reais.
+`src/features/chamados/index.ts` final (substitui os stubs):
+```ts
+export { ChamadoPage } from './pages/ChamadoPage'
+export { FilaConsultorPage } from './pages/FilaConsultorPage'
+export { MeusChamadosPage } from './pages/MeusChamadosPage'
+export { NovoChamadoPage } from './pages/NovoChamadoPage'
+export { DetalheChamado } from './components/DetalheChamado'
+```
 
 - [ ] **Step 4: Verificar**
 
@@ -5120,6 +5154,7 @@ export function EquipePage() {
 
   if (chamados.isPending || historico.isPending) return <Carregando />
   if (chamados.isError) return <Erro erro={chamados.error} tentar={() => chamados.refetch()} />
+  if (historico.isError) return <Erro erro={historico.error} tentar={() => historico.refetch()} />
   const nomeGrupo = (id: string) => grupos.find((g) => g.id === id)?.nome ?? ''
   const consultorAberto = agregados.find((a) => a.consultor.id === aberto)
 
@@ -5168,7 +5203,7 @@ git commit -m "feat: painel do gestor com carga por consultor, tempo ocioso, red
 
 **Fim do Chunk 3.** Os 6 requisitos do enunciado estão na tela.
 
-> Validação do chunk (14/11/2026): montado em rascunho sobre os Chunks 1 e 2; com as correções já incorporadas acima (fixture da fila, filtro por grupo, `ToastProvider` nos testes, polyfills do Radix em `setup.ts`, primeira visita gravada no login, `BadgePrazo`/`FaixaAlerta` em `shared/`), typecheck limpo e suíte verde. Não validado em navegador.
+> Validação do chunk (14/11/2026): montado em rascunho sobre os Chunks 1 e 2; com as correções já incorporadas acima (fixture da fila, filtro por grupo, `ToastProvider` nos testes, polyfills do Radix em `setup.ts`, primeira visita gravada no login, `BadgePrazo`/`FaixaAlerta` em `shared/`), typecheck limpo e suíte verde. Revisão integrada final do plano inteiro: typecheck 0 erros, 115/115 testes (inclusive com ordem embaralhada) após o reset do store de sessão em `setup.ts`. Não validado em navegador: StrictMode, service worker do MSW, Web Locks e layout só se provam em `pnpm dev`.
 
 ---
 
@@ -5276,7 +5311,8 @@ function AvisosIniciais() {
   const { notificar } = useToast()
   useEffect(() => {
     // id fixo: em StrictMode o efeito roda duas vezes e o ToastProvider deduplica por id
-    if (servidor.ignoradosNoReplay > 0) notificar({ id: 'replay-ignorados', tipo: 'alerta', titulo: `${servidor.ignoradosNoReplay} eventos inválidos foram ignorados ao carregar` })
+    const n = servidor.ignoradosNoReplay
+    if (n > 0) notificar({ id: 'replay-ignorados', tipo: 'alerta', titulo: n === 1 ? '1 evento inválido foi ignorado ao carregar' : `${n} eventos inválidos foram ignorados ao carregar` })
   }, [servidor, notificar])
   return null
 }
@@ -5285,7 +5321,7 @@ Imports: `useEffect` de `react`, `useRealtime` de `./providers/RealtimeProvider`
 
 - [ ] **Step 4: Verificar**
 
-`pnpm typecheck && pnpm test`. `pnpm dev`, duas abas (Marina e Helena): o rodapé de uma diz "esta aba simula" e o da outra "outra aba simula". Pausar na segunda pausa a primeira. Fechar a primeira: a segunda assume em poucos segundos. Em 20x, o relógio corre visivelmente, um chamado cruza faixa e a Marina recebe toast. "Resetar dados" pede confirmação e recarrega limpo. Para testar o aviso de replay: no DevTools, `localStorage.setItem('itsm:evt:2026-x:1', '{quebrado')` e recarregar → toast "1 eventos inválidos…" (ajustar plural: "1 evento inválido foi ignorado" quando for 1).
+`pnpm typecheck && pnpm test`. `pnpm dev`, duas abas (Marina e Helena): o rodapé de uma diz "esta aba simula" e o da outra "outra aba simula". Pausar na segunda pausa a primeira. Fechar a primeira: a segunda assume em poucos segundos. Em 20x, o relógio corre visivelmente, um chamado cruza faixa e a Marina recebe toast. "Resetar dados" pede confirmação e recarrega limpo. Para testar o aviso de replay: no DevTools, `localStorage.setItem('itsm:evt:2026-x:1', '{quebrado')` e recarregar → toast "1 evento inválido foi ignorado ao carregar".
 
 - [ ] **Step 5: Commit**
 
@@ -5313,7 +5349,17 @@ if (q.isError) {
   return <Erro erro={e} tentar={() => q.refetch()} />
 }
 ```
-Import `ApiError` de `@/api/apiClient` e `Vazio` de `@/shared/components`. Abaixo do texto, um link `<a href={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</a>` (importar `ROTA_INICIAL` de `@/app/routes/RotaProtegida`; se preferir não importar de `app/` dentro de `features/`, mover `ROTA_INICIAL` para `src/shared/utils/rotas.ts` e importar dos dois lugares).
+Versão completa do ramo, com `ApiError` de `@/api/apiClient`, `Vazio` de `@/shared/components`, `Link` de `react-router` e `ROTA_INICIAL` de `@/shared/utils/rotas`:
+```tsx
+if (e instanceof ApiError && (e.status === 404 || e.status === 403)) {
+  return (
+    <>
+      <Vazio texto="Este chamado não existe ou não está no seu alcance." />
+      <p style={{ textAlign: 'center' }}><Link to={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</Link></p>
+    </>
+  )
+}
+```
 
 - [ ] **Step 2: Verificação de teclado e leitor de tela**
 
