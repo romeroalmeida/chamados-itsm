@@ -3489,7 +3489,7 @@ export function Casca() {
 }
 ```
 
-`src/app/layout/PainelSimulador.tsx`: criar stub agora (`export function PainelSimulador() { return null }`); a Task 24 implementa.
+`src/app/layout/PainelSimulador.tsx`: criar stub agora (`export function PainelSimulador() { return null }`); a Task 23 implementa.
 
 - [ ] **Step 6: `App.tsx` e `main.tsx`**
 
@@ -4511,7 +4511,7 @@ Atualizar `src/features/chamados/index.ts` para exportar `FilaConsultorPage` rea
 ```bash
 pnpm test src/features/chamados && pnpm typecheck
 ```
-`pnpm dev` como Marina: 42 em "Meus", vencidos no topo, faixa vermelha com contagem. Com o painel do simulador em 20x (Task 24) um chamado cruza faixa e dispara toast. Abrir um chamado, começar a digitar, e em outra aba (Helena, dona do chamado) mandar mensagem: aparece "1 mensagem nova" sem rolar.
+`pnpm dev` como Marina: 42 em "Meus", vencidos no topo, faixa vermelha com contagem. Com o painel do simulador em 20x (Task 23) um chamado cruza faixa e dispara toast. Abrir um chamado, começar a digitar, e em outra aba (Helena, dona do chamado) mandar mensagem: aparece "1 mensagem nova" sem rolar.
 
 - [ ] **Step 6: Commit**
 
@@ -5052,14 +5052,15 @@ git commit -m "feat: painel do gestor com carga por consultor, tempo ocioso, red
 
 ## Chunk 4: Painel do simulador, documentação e verificação final
 
-### Task 23: Painel do simulador
+### Task 23: Painel do simulador e aviso de replay
 
 **Files:**
-- Modify: `src/app/layout/PainelSimulador.tsx` (substituir o stub), create `src/app/layout/PainelSimulador.module.css`
+- Modify: `src/app/layout/PainelSimulador.tsx` (substituir o stub), `src/app/App.tsx`
+- Create: `src/app/layout/PainelSimulador.module.css`
 
-Spec §4.4. Discreto, no rodapé, sempre visível para a equipe e para o cliente (o avaliador precisa dele em qualquer perfil).
+Spec §4.4, §4.5, §8. Discreto, no rodapé, em todos os perfis (o avaliador precisa dele em qualquer um).
 
-- [ ] **Step 1: Implementar**
+- [ ] **Step 1: CSS**
 
 `src/app/layout/PainelSimulador.module.css`:
 ```css
@@ -5067,11 +5068,13 @@ Spec §4.4. Discreto, no rodapé, sempre visível para a equipe e para o cliente
 .painel strong { color: #fff; }
 .botao { background: #2b303b; color: #fff; border: 1px solid #3a4150; border-radius: 6px; padding: 2px 8px; }
 .botao:hover { background: #363c49; }
-.ativo { color: #7ee2a8; } .inativo { color: #9aa3ad; }
+.ativo { color: #7ee2a8; } .inativo { color: #9aa3ad; } .aviso { color: #f6c453; }
 .velocidades { display: inline-flex; gap: 2px; }
 .velocidades .botao[aria-pressed="true"] { background: var(--cor-primaria); border-color: var(--cor-primaria); }
 .espaco { flex: 1; }
 ```
+
+- [ ] **Step 2: Painel**
 
 `src/app/layout/PainelSimulador.tsx`:
 ```tsx
@@ -5081,42 +5084,54 @@ import { relogio } from '@/shared/utils/relogio'
 import { useNow } from '@/shared/hooks/useNow'
 import { useSessao } from '@/state/sessao'
 import { formatarDataHora } from '@/shared/utils/datas'
+import { CHAVE_SIMULADOR } from '@/mock-server/simulator'
 import s from './PainelSimulador.module.css'
 
 const VELOCIDADES = [1, 5, 20] as const
+const semLocks = typeof navigator === 'undefined' || !('locks' in navigator)
 
 /** Spec §4.4: pausar, velocidade, disparar, resetar, contadores, quem simula. */
 export function PainelSimulador() {
-  const { servidor, realtime } = useRealtime()
+  const { servidor } = useRealtime()
   const usuario = useSessao((st) => st.usuario)
+  // useNow(1000) também é o que re-renderiza o rótulo "esta aba simula" quando o lock chega (defasagem máxima de 1 s)
   const agora = useNow(1000)
   const [ligado, setLigado] = useState(servidor.simulador.ligado())
-  const [velocidade, setVelocidade] = useState(relogio.velocidade())
   const [recebidos, setRecebidos] = useState(0)
   const [duplicados, setDuplicados] = useState(0)
   const [ultima, setUltima] = useState<string | null>(null)
   const [confirmarReset, setConfirmarReset] = useState(false)
+  const velocidade = relogio.velocidade() // fonte única: itsm:relogio (spec §4.5)
 
   useEffect(() => {
     const vistos = new Set<string>()
-    // conta no nível do bus (antes do dedupe do realtime) para mostrar as duplicatas descartadas
+    // conta no socket (já filtrado por visibilidade, antes do dedupe do realtime): o que chegou a ESTA aba
     const sair = servidor.socket.assinar((e) => { if (vistos.has(e.id)) setDuplicados((d) => d + 1); else { vistos.add(e.id); setRecebidos((r) => r + 1) } })
     const sairAcao = servidor.simulador.onAcao((a) => setUltima(a.descricao))
-    return () => { sair(); sairAcao() }
-  }, [servidor, realtime])
+    // "ligado" é global (localStorage): pausar numa aba pausa a que detém o lock
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key !== CHAVE_SIMULADOR) return
+      const on = ev.newValue !== 'off'
+      if (on) servidor.simulador.ligar(); else servidor.simulador.desligar()
+      setLigado(on)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => { sair(); sairAcao(); window.removeEventListener('storage', onStorage) }
+  }, [servidor])
 
   const alternar = () => { if (ligado) servidor.simulador.desligar(); else servidor.simulador.ligar(); setLigado(!ligado) }
-  const mudarVelocidade = (v: number) => { relogio.definirVelocidade(v); setVelocidade(v) }
+  const rotuloAba = !ligado ? 'pausado' : semLocks ? 'sem Web Locks: toda aba simula' : servidor.simulador.ativoNestaAba() ? 'esta aba simula' : 'outra aba simula'
+  const classeAba = !ligado ? s.inativo : semLocks ? s.aviso : servidor.simulador.ativoNestaAba() ? s.ativo : s.inativo
 
   return (
     <footer className={s.painel} aria-label="Simulador de atividade">
       <span>Relógio virtual: <strong>{usuario ? formatarDataHora(new Date(agora).toISOString(), usuario, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : new Date(agora).toISOString()}</strong></span>
       <span className={s.velocidades} role="group" aria-label="Velocidade">
-        {VELOCIDADES.map((v) => <button key={v} className={s.botao} aria-pressed={velocidade === v} onClick={() => mudarVelocidade(v)}>{v}x</button>)}
+        {VELOCIDADES.map((v) => <button key={v} className={s.botao} aria-pressed={velocidade === v} onClick={() => relogio.definirVelocidade(v)}>{v}x</button>)}
       </span>
       <button className={s.botao} onClick={alternar}>{ligado ? 'Pausar simulador' : 'Retomar simulador'}</button>
       <button className={s.botao} onClick={() => void servidor.simulador.dispararAgora()}>Disparar evento</button>
-      <span className={servidor.simulador.ativoNestaAba() ? s.ativo : s.inativo}>{!ligado ? 'pausado' : servidor.simulador.ativoNestaAba() ? 'esta aba simula' : 'outra aba simula'}</span>
+      <span className={classeAba}>{rotuloAba}</span>
       <span>eventos: <strong>{recebidos}</strong> · duplicatas descartadas: <strong>{duplicados}</strong></span>
       {ultima && <span title="última ação simulada">· {ultima}</span>}
       <span className={s.espaco} />
@@ -5128,62 +5143,104 @@ export function PainelSimulador() {
 }
 ```
 
-Nota: o contador de duplicatas conta no `socket` (já filtrado por visibilidade), então mostra as duplicatas que chegaram **a esta aba**. É o que o avaliador consegue conferir.
+Ajuste em `src/mock-server/simulator.ts` (Task 13): `ligar()` em aba sem lock não deve enfileirar outro `navigator.locks.request` a cada chamada. Acrescentar `let pedindoLock = false`; em `comecar()`, `if (pedindoLock) return; pedindoLock = true` antes do `obterLock`. Rodar `pnpm test src/mock-server/simulator` depois.
 
-Aviso de eventos ignorados no replay (spec §8): em `App.tsx`, depois de montar o `ToastProvider`, um componente `AvisosIniciais` que, se `servidor.ignoradosNoReplay > 0`, notifica uma vez "N eventos inválidos foram ignorados ao carregar".
+- [ ] **Step 3: Aviso de eventos ignorados no replay (spec §8)**
 
-- [ ] **Step 2: Verificar**
+Em `src/app/App.tsx`, dentro de `<ToastProvider>`, antes de `<Rotas />`, renderizar `<AvisosIniciais />`:
+```tsx
+function AvisosIniciais() {
+  const { servidor } = useRealtime()
+  const { notificar } = useToast()
+  useEffect(() => {
+    // id fixo: em StrictMode o efeito roda duas vezes e o ToastProvider deduplica por id
+    if (servidor.ignoradosNoReplay > 0) notificar({ id: 'replay-ignorados', tipo: 'alerta', titulo: `${servidor.ignoradosNoReplay} eventos inválidos foram ignorados ao carregar` })
+  }, [servidor, notificar])
+  return null
+}
+```
+Imports: `useEffect` de `react`, `useRealtime` de `./providers/RealtimeProvider`, `useToast` de `@/shared/components`.
 
-`pnpm dev`, duas abas (Marina e Helena): o rodapé de uma diz "esta aba simula" e o da outra "outra aba simula". Fechar a primeira: a segunda assume em poucos segundos. Em 20x, o relógio corre visivelmente, um chamado cruza faixa e a Marina recebe toast. "Resetar dados" pede confirmação e recarrega limpo.
+- [ ] **Step 4: Verificar**
 
-- [ ] **Step 3: Commit**
+`pnpm typecheck && pnpm test`. `pnpm dev`, duas abas (Marina e Helena): o rodapé de uma diz "esta aba simula" e o da outra "outra aba simula". Pausar na segunda pausa a primeira. Fechar a primeira: a segunda assume em poucos segundos. Em 20x, o relógio corre visivelmente, um chamado cruza faixa e a Marina recebe toast. "Resetar dados" pede confirmação e recarrega limpo. Para testar o aviso de replay: no DevTools, `localStorage.setItem('itsm:evt:2026-x:1', '{quebrado')` e recarregar → toast "1 eventos inválidos…" (ajustar plural: "1 evento inválido foi ignorado" quando for 1).
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git add src/app
-git commit -m "feat: painel do simulador com velocidade, pausa, disparo e reset"
+git add src/app src/mock-server/simulator.ts
+git commit -m "feat: painel do simulador sincronizado entre abas e aviso de replay"
 ```
 
 ---
 
-### Task 24: Estados de erro, acessibilidade mínima e responsivo
+### Task 24: Erros amigáveis, teclado e largura estreita
 
 **Files:**
-- Modify: `src/app/routes/index.tsx` (404 e sem acesso já existem; revisar texto), `src/features/chamados/components/DetalheChamado.tsx` (404 de id inexistente), `src/shared/styles/reset.css`
+- Modify: `src/features/chamados/components/DetalheChamado.tsx`, `src/features/chamados/pages/FilaConsultorPage.tsx`, `src/features/chamados/pages/FilaConsultorPage.module.css`, `src/features/equipe/pages/EquipePage.module.css`, `src/features/equipe/components/Redistribuir.tsx`, `FilaSemDono.tsx`, `VencendoEmBreve.tsx`
 
-- [ ] **Step 1: 404 e 403 amigáveis no detalhe**
+- [ ] **Step 1: 404 e 403 no detalhe**
 
-Em `DetalheChamado`, quando `q.error` é `ApiError` com `status` 404 ou 403, renderizar texto específico com link para a tela inicial do perfil (`ROTA_INICIAL[usuario.perfil]`): "Este chamado não existe ou não está no seu alcance."
+Em `DetalheChamado`, substituir `if (q.isError) return <Erro …/>` por:
+```tsx
+if (q.isError) {
+  const e = q.error
+  if (e instanceof ApiError && (e.status === 404 || e.status === 403)) {
+    return <Vazio texto="Este chamado não existe ou não está no seu alcance." />
+  }
+  return <Erro erro={e} tentar={() => q.refetch()} />
+}
+```
+Import `ApiError` de `@/api/apiClient` e `Vazio` de `@/shared/components`. Abaixo do texto, um link `<a href={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</a>` (importar `ROTA_INICIAL` de `@/app/routes/RotaProtegida`; se preferir não importar de `app/` dentro de `features/`, mover `ROTA_INICIAL` para `src/shared/utils/rotas.ts` e importar dos dois lugares).
 
-- [ ] **Step 2: Teclado e leitores de tela**
+- [ ] **Step 2: Verificação de teclado e leitor de tela**
 
-Checklist manual, registrar o resultado no commit:
-- Tab percorre fila → detalhe → caixa → ações, com foco visível.
-- Diálogos (Radix) prendem o foco e fecham com Esc.
-- Toasts têm botão "Fechar" e `role` apropriado via Radix.
-- Toda ação de linha tem `aria-label` com o número do chamado.
+Rodar em `pnpm dev` como Marina. Esperado: tudo passa; se algum item falhar, corrigir no componente apontado antes do commit.
+- Tab percorre faixa de alerta → abas → busca → selects → linhas da fila → ações do chamado → caixa de resposta, com foco visível (`:focus-visible` global em `reset.css`).
+- Diálogos (Radix `Dialog`) prendem o foco e fecham com Esc.
+- Toasts têm botão "Fechar" (`Toast.tsx`).
+- Cada linha da fila é um `<button>` cujo texto começa pelo número do chamado (sem `aria-label` redundante). Os checkboxes do gestor têm `aria-label` `Selecionar #N` (`Redistribuir.tsx`).
 
 - [ ] **Step 3: Largura de celular**
 
-Em 390px: fila ocupa a tela; abrir chamado esconde a fila e mostra um botão "Voltar à fila" no topo do detalhe (adicionar em `FilaConsultorPage` quando `id` existe e `window.matchMedia('(max-width: 900px)')`). Painel do gestor empilha. Nada rola horizontalmente.
+Em `FilaConsultorPage.module.css` acrescentar:
+```css
+.voltar { display: none; }
+@media (max-width: 900px) { .voltar { display: inline-flex; margin: 8px 12px; } }
+```
+Em `FilaConsultorPage.tsx`, dentro de `<section className={s.detalhe}>`, quando `id` existe, antes do `DetalheChamado`:
+```tsx
+<Button pequeno className={s.voltar} onClick={() => nav('/fila')}>Voltar à fila</Button>
+```
+(`Button` já aceita `className`, Task 14.)
+
+Em `EquipePage.module.css` acrescentar `.rolagem { overflow-x: auto; }` e, em `Redistribuir.tsx`, `FilaSemDono.tsx` e `VencendoEmBreve.tsx`, envolver cada `<table className={s.tabela}>` em `<div className={s.rolagem}>…</div>`.
+
+Verificar em 390px (DevTools, iPhone 12): fila ocupa a tela; abrir chamado esconde a fila e mostra "Voltar à fila"; painel do gestor empilha os cartões (`auto-fill`) e as tabelas rolam dentro do próprio quadro; a página não rola na horizontal.
 
 - [ ] **Step 4: Commit**
 
 ```bash
+pnpm typecheck && pnpm test
 git add src
-git commit -m "feat: erros amigáveis, foco por teclado e layout estreito"
+git commit -m "feat: erros amigáveis no detalhe, botão voltar no celular e tabelas com rolagem"
 ```
 
 ---
 
-### Task 25: README, decisões e verificação final
+### Task 25: README, decisões, metadados e verificação final
 
 **Files:**
 - Create: `README.md`, `docs/decisoes.md`
-- Modify: `package.json` (campo `engines`), `.gitignore`
+- Modify: `package.json`
 
-- [ ] **Step 1: README**
+- [ ] **Step 1: Metadados do projeto**
 
-`README.md` cobre, nesta ordem:
+Em `package.json` acrescentar `"engines": { "node": ">=24" }` e `"packageManager": "pnpm@<versão exata de pnpm -v>"`. Conferir que `.gitignore` do template tem `node_modules`, `dist` e `*.local`; acrescentar `.env*`. `public/mockServiceWorker.js` fica versionado (o app não roda sem ele).
+
+- [ ] **Step 2: README**
+
+`README.md`, nesta ordem, em pt-BR, sem travessão, um parágrafo por item, sem copiar a spec:
 
 ```markdown
 # Área de chamados (ITSM)
@@ -5210,22 +5267,22 @@ O login é fake: e-mail + PIN. O PIN de todos é `123456`.
 | Gestor | Ricardo Monteiro | ricardo.monteiro@suporte.example | /equipe |
 | Cliente | Helena Fernandes | helena.fernandes@lusitania.example | /meus-chamados |
 
-Qualquer outro usuário do `dados.json` também entra com o mesmo PIN. "Quem posso ser?" na tela de login preenche os três.
+Qualquer outro usuário do `dados.json` também entra com o mesmo PIN. "Quem posso ser?" na tela de login lista os três; clicar num deles preenche o e-mail e o PIN.
 
 A sessão é por aba. Abra duas abas, entre como Marina numa e Helena na outra, e converse entre elas.
 
 ## Como ver o tempo real
 
-- **Duas abas**: ação numa aba aparece na outra sem recarregar.
-- **Simulador** (rodapé): gera atividade de fundo (clientes respondendo, consultores pegando chamado, status mudando). Pausar, 1x/5x/20x, "Disparar evento", "Resetar dados". Roda numa aba só; o rodapé diz qual.
-- **Relógio virtual**: o arquivo diz que "agora" é 03/11/2026 13:00 UTC; o app parte daí e anda em tempo real. Em 20x, um prazo de 2h estoura em 6 minutos. Com o relógio real, 100% dos prazos estariam vencidos.
-- **Eventos duplicados**: cerca de 1 em 10 eventos é entregue duas vezes de propósito; o rodapé conta quantos foram descartados.
+- Duas abas: ação numa aba aparece na outra sem recarregar.
+- Simulador (rodapé): gera atividade de fundo (clientes respondendo, consultores pegando chamado, status mudando). Pausar, 1x/5x/20x, "Disparar evento", "Resetar dados". Roda numa aba só; o rodapé diz qual. Depois de resetar, recarregue as outras abas.
+- Relógio virtual: o arquivo diz que "agora" é 03/11/2026 13:00 UTC; o app parte daí e anda em tempo real. Em 20x, um prazo de 2h estoura em 6 minutos. Com o relógio real, 100% dos prazos estariam vencidos.
+- Eventos duplicados: cerca de 1 em 10 eventos é entregue duas vezes de propósito; o rodapé conta quantos foram descartados.
 
 ## O que cada perfil vê e por quê
-(resumo da spec §5, um parágrafo por perfil, incluindo o alerta de SLA da Marina e o tempo ocioso do Ricardo)
+(um parágrafo por perfil, a partir da spec §5: fila "estoura primeiro" e alerta de prazo da Marina; carga, vencidos e ocioso por pessoa do Ricardo; linguagem, fuso e sugestão de reabertura da Helena)
 
 ## Como a simulação funciona
-(resumo da spec §4: MSW, reducer compartilhado, log em localStorage com uma chave por evento, BroadcastChannel, dedupe por id, socket filtrado por visibilidade)
+(um parágrafo a partir da spec §4: MSW, reducer compartilhado, log em localStorage com uma chave por evento, BroadcastChannel, dedupe por id, socket filtrado por visibilidade)
 
 ## Decisões
 Link para `docs/decisoes.md`. Versões: por que React 19 / Vite 8 / Router 7 / MSW 2 / Vitest 4 / TS 5.9 e não os majors mais novos.
@@ -5234,36 +5291,37 @@ Link para `docs/decisoes.md`. Versões: por que React 19 / Vite 8 / Router 7 / M
 (spec §13)
 
 ## Estrutura
-(árvore resumida da spec §4 e regra "mock-server só entra em main.tsx")
+(árvore resumida da spec §4 e a regra "mock-server só entra em main.tsx")
 
 ## Testes
 O que cobre (spec §10), como rodar, o que não tem (e2e).
 ```
 
-- [ ] **Step 2: `docs/decisoes.md`**
+- [ ] **Step 3: `docs/decisoes.md`**
 
-Uma entrada por decisão, formato: **Decisão** · Alternativas · Por quê · Onde no código. Cobrir: stack e versões; login com PIN; relógio virtual; log por evento; reducer burro e handler emitindo derivados; agregados no cliente; sessão por aba; reabrir não recria prazo; pausa não estende prazo; prioridade por categoria; similaridade por palavras; tempo ocioso por histórico; CSS Modules sem Tailwind; Radix sem estilo; sem e2e.
+Uma entrada por decisão, formato: **Decisão** · Alternativas · Por quê · Onde no código. Cobrir, nesta ordem: stack e versões; CSS Modules sem Tailwind; Radix sem estilo; login com PIN; tempo real (BroadcastChannel + simulador numa aba via Web Locks + ~10% de eventos duplicados de propósito); relógio virtual e velocidade; log por evento em `localStorage`; reducer burro e handler emitindo derivados; sessão por aba; agregados do gestor no cliente; datas com `Intl` e `zoneinfo`, sem biblioteca; escopo (6 obrigatórios + dores das personas); tabela de transições e motivo obrigatório (`400` fora dela); `prazoRelevante` e faixas (só `status` decide "encerrado"); concorrência ao pegar (`409`, último evento vence, janela aceita como limite do fake); reabrir não recria prazo; pausa não estende prazo; prioridade por categoria; similaridade por palavras; tempo ocioso por histórico; sem e2e.
 
-- [ ] **Step 3: Verificação final**
+- [ ] **Step 4: Verificação final**
 
 ```bash
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm preview   # abrir, entrar com os três perfis, conferir que o service worker funciona no build
+pnpm preview   # entrar com os três perfis; o service worker precisa funcionar no build
 git status     # nada não rastreado fora do lugar; nenhum .env
-grep -rn "Co-Authored" .git/COMMIT_EDITMSG docs README.md || true   # vazio
+git log --format='%an <%ae>' | sort -u          # esperado: uma linha, Romero
+git log --format=%B | grep -i 'co-authored'; echo "exit $?"   # esperado: exit 1 (nada)
 ```
-Confirmar no `git log` que todos os commits têm só o autor Romero.
+O ambiente do executor injeta um trailer `Co-Authored-By` por padrão; a regra do repositório (cabeçalho deste plano) prevalece. Se algum commit tiver saído com a linha, reescrever antes de qualquer push: `git filter-branch -f --msg-filter 'grep -v "^Co-Authored-By"' main`.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add README.md docs/decisoes.md package.json .gitignore
 git commit -m "docs: README com perfis, simulação e decisões"
 ```
 
-- [ ] **Step 5: Entrega (só com ordem explícita do Romero)**
+- [ ] **Step 6: Entrega (só com ordem explícita do Romero)**
 
 Não executar sem ele mandar: criar repositório privado no GitHub, `git push`, adicionar `brunopujoniseidor` como colaborador de leitura, avisar o avaliador.
 
