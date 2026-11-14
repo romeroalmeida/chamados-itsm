@@ -2,11 +2,12 @@
 .fila { display: grid; grid-template-rows: auto auto 1fr; min-height: 0; border-right: 1px solid var(--cor-borda); background: var(--cor-superficie); }
 .filtros { display: flex; gap: var(--espaco-2); padding: var(--espaco-2) var(--espaco-3); flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--cor-borda); }
 .busca { flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); }
-.detalhe { min-height: 0; }
+.detalhe { display: flex; flex-direction: column; min-height: 0; }
+.detalhe > :last-child { flex: 1; min-height: 0; }
 .vazioDetalhe { display: grid; place-items: center; height: 100%; color: var(--cor-texto-fraco); }
-.voltar { display: none; }
+.detalhe .voltar { display: none; }
 @media (max-width: 900px) {
   .pagina { grid-template-columns: 1fr; }
   .fila.comDetalhe { display: none; }
-  .voltar { display: inline-flex; margin: 8px 12px; }
+  .detalhe .voltar { display: flex; flex: none; padding: var(--espaco-2) var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
 }

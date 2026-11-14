@@ -1,0 +1,7 @@
+.trilha { display: flex; align-items: center; gap: var(--espaco-2); min-width: 0; font-size: 13px; }
+.voltar { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; margin-left: -6px; border-radius: var(--raio-pequeno); font-weight: 500; color: var(--cor-texto-fraco); text-decoration: none; transition: background var(--transicao), color var(--transicao); }
+.voltar:hover { background: var(--cor-superficie-2); color: var(--cor-texto); }
+.voltar svg { width: 16px; height: 16px; transition: transform var(--transicao); }
+.voltar:hover svg { transform: translateX(-2px); }
+.separador { color: var(--cor-texto-sutil); }
+.atual { font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; color: var(--cor-texto); }

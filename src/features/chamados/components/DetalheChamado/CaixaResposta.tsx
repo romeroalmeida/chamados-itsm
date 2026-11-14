@@ -24,9 +24,12 @@ export function CaixaResposta({ chamadoId, usuario, onDigitando, textoInicial = 
   return (
     <div className={s.caixa}>
       {equipe && (
-        <div className={s.caixaLinha} role="radiogroup" aria-label="Tipo de mensagem">
-          <label><input type="radio" name="tipo" checked={!interna} onChange={() => setInterna(false)} /> Resposta ao cliente</label>
-          <label><input type="radio" name="tipo" checked={interna} onChange={() => setInterna(true)} /> Nota interna (só a equipe vê)</label>
+        <div className={s.caixaLinha}>
+          <div className={s.segmentado} role="radiogroup" aria-label="Tipo de mensagem">
+            <label className={s.segmento}><input className={s.radio} type="radio" name="tipo" checked={!interna} onChange={() => setInterna(false)} />Resposta ao cliente</label>
+            <label className={s.segmento}><input className={s.radio} type="radio" name="tipo" checked={interna} onChange={() => setInterna(true)} />Nota interna</label>
+          </div>
+          <small className={s.dica}>só a equipe vê a nota interna</small>
         </div>
       )}
       <textarea className={`${s.textarea} ${interna ? s.interna : ''}`} aria-label={interna ? 'Nota interna' : 'Resposta'} value={texto}
@@ -35,7 +38,7 @@ export function CaixaResposta({ chamadoId, usuario, onDigitando, textoInicial = 
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) mandar() }} />
       <div className={s.caixaLinha}>
         <Button variante="primaria" onClick={mandar} disabled={enviar.isPending || !texto.trim()}>{interna ? 'Salvar nota' : 'Enviar'}</Button>
-        <small style={{ color: 'var(--cor-texto-fraco)' }}>Ctrl+Enter envia</small>
+        <small className={s.dica}>Ctrl + Enter envia</small>
       </div>
     </div>
   )

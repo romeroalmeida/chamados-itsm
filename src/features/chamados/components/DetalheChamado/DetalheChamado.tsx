@@ -39,7 +39,7 @@ export function DetalheChamado({ id, usuario, reabrirInicial }: Props) {
       return (
         <>
           <Vazio texto="Este chamado não existe ou não está no seu alcance." />
-          <p style={{ textAlign: 'center' }}><Link to={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</Link></p>
+          <p className={s.foraDeAlcance}><Link to={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</Link></p>
         </>
       )
     }
@@ -50,19 +50,19 @@ export function DetalheChamado({ id, usuario, reabrirInicial }: Props) {
   const consultoresDoGrupo = Object.values(usuarios).filter((u): u is UsuarioConsultor => u.perfil === 'consultor' && u.grupo_id === chamado.grupo_id)
   const cliente = usuario.perfil === 'cliente'
 
+  const acoes = <AcoesStatus chamado={chamado} usuario={usuario} consultoresDoGrupo={consultoresDoGrupo} reabrirInicial={reabrirInicial} onMensagemFalhou={setTextoCaixa} />
+
   return (
     <article className={s.detalhe} aria-label={`Chamado ${chamado.numero}`}>
       <div>
         <CabecalhoChamado chamado={chamado} usuario={usuario} usuarios={usuarios} agora={agora} reabertoEm={reabertoEm} categoria={cliente ? undefined : categorias.find((c) => c.id === chamado.categoria_id)?.nome} />
-        <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--cor-borda)' }}>
-          <AcoesStatus chamado={chamado} usuario={usuario} consultoresDoGrupo={consultoresDoGrupo} reabrirInicial={reabrirInicial} onMensagemFalhou={setTextoCaixa} />
-        </div>
+        {cliente && <div className={s.barraAcoes}>{acoes}</div>}
         {cliente && <PassosCliente historico={historico} usuario={usuario} />}
       </div>
       {cliente
         ? <Conversa mensagens={mensagens} usuarios={usuarios} usuario={usuario} digitando={digitando} />
         : (
-          <Tabs ariaLabel="Conversa e histórico" abas={[{ valor: 'conversa', rotulo: 'Conversa', contador: mensagens.length }, { valor: 'historico', rotulo: 'Histórico', contador: historico.length }]} valor={aba} onChange={setAba}>
+          <Tabs variante="segmentado" extra={acoes} ariaLabel="Conversa e histórico" abas={[{ valor: 'conversa', rotulo: 'Conversa', contador: mensagens.length }, { valor: 'historico', rotulo: 'Histórico', contador: historico.length }]} valor={aba} onChange={setAba}>
             {aba === 'conversa'
               ? <Conversa mensagens={mensagens} usuarios={usuarios} usuario={usuario} digitando={digitando} />
               : <HistoricoLista historico={historico} usuarios={usuarios} usuario={usuario} />}

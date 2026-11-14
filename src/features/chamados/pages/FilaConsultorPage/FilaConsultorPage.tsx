@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import type { Chamado, UsuarioConsultor } from '@/shared/types'
 import { useChamados, useMapaUsuarios } from '@/api/queries'
-import { Button, Carregando, Erro, FaixaAlerta, Select, Tabs, useToast } from '@/shared/components'
+import { Carregando, Erro, FaixaAlerta, Select, Tabs, useToast } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { formatarRelativo } from '@/shared/utils/datas'
 import { faixaSla, restanteMs, type Faixa } from '@/shared/utils/sla'
 import { useSessao } from '@/state/sessao'
 import { DetalheChamado } from '../../components/DetalheChamado/DetalheChamado'
 import { ListaChamados } from '../../components/ListaChamados'
+import { Trilha } from '../../components/Trilha/Trilha'
 import { useAlertaSla } from '../../hooks/useAlertaSla'
 import { filtrarFila, type AbaFila, type FiltroFila, type FiltroStatus, type OrdemFila } from '../../utils/fila'
 import s from './FilaConsultorPage.module.css'
@@ -67,7 +68,8 @@ export function FilaConsultorPage() {
         {id
           ? (
             <>
-              <Button pequeno className={s.voltar} onClick={() => nav('/fila')}>Voltar à fila</Button>
+              {/* só aparece em tela estreita, quando a fila some; volta sempre para /fila (o histórico pode ser outro chamado) */}
+              <Trilha perfil="consultor" numero={todos.find((c) => c.id === id)?.numero} className={s.voltar} />
               <DetalheChamado key={id} id={id} usuario={usuario} />
             </>
           )

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { Mensagem, Usuario } from '@/shared/types'
-import { Button } from '@/shared/components'
 import { formatarDataHora } from '@/shared/utils/datas'
 import s from './detalhe.module.css'
+
+const DIA: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
+const HORA: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
 
 interface Props { mensagens: Mensagem[]; usuarios: Record<string, Usuario>; usuario: Usuario; digitando: boolean }
 
@@ -45,15 +47,18 @@ export function Conversa({ mensagens, usuarios, usuario, digitando }: Props) {
           const m = mensagens[item.index]!
           const autor = usuarios[m.autor_id]
           const minha = m.autor_id === usuario.id
+          const dia = formatarDataHora(m.criada_em, usuario, DIA)
+          const novoDia = item.index === 0 || formatarDataHora(mensagens[item.index - 1]!.criada_em, usuario, DIA) !== dia
           return (
-            <div key={m.id} data-index={item.index} ref={virtual.measureElement} style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${item.start}px)` }}>
+            <div key={m.id} data-index={item.index} ref={virtual.measureElement} className={s.item} style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${item.start}px)` }}>
+              {novoDia && <div className={s.dia}>{dia}</div>}
               <div className={`${s.mensagem} ${minha ? s.minha : ''} ${m.interna ? s.interna : ''}`}>
                 <div className={s.autor}>
                   <strong>{autor?.nome ?? 'Alguém'}</strong>
-                  <span>{formatarDataHora(m.criada_em, usuario)}</span>
+                  <span>{formatarDataHora(m.criada_em, usuario, HORA)}</span>
                   {m.interna && <span className={s.rotuloInterna}>Nota interna · só a equipe vê</span>}
                 </div>
-                <div>{m.texto}</div>
+                <div className={s.texto}>{m.texto}</div>
               </div>
             </div>
           )
@@ -61,7 +66,7 @@ export function Conversa({ mensagens, usuarios, usuario, digitando }: Props) {
       </div>
       {novas > 0 && (
         <div className={s.avisoNova} role="status">
-          <Button pequeno variante="primaria" onClick={rolarParaFim}>{novas === 1 ? '1 mensagem nova' : `${novas} mensagens novas`} · ver</Button>
+          <button type="button" className={s.nova} onClick={rolarParaFim}><i aria-hidden />{novas === 1 ? '1 mensagem nova' : `${novas} mensagens novas`} · ver</button>
         </div>
       )}
     </div>

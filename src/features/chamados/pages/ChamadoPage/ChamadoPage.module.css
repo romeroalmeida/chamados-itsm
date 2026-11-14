@@ -1,0 +1,7 @@
+.pagina { display: grid; grid-template-rows: auto 1fr; gap: var(--espaco-3); height: 100%; min-height: 0; max-width: 1120px; margin: 0 auto; padding: var(--espaco-3) var(--espaco-6) var(--espaco-6); }
+.detalhe { min-height: 0; overflow: hidden; border: 1px solid var(--cor-borda); border-radius: var(--raio-cartao); background: var(--cor-superficie); box-shadow: var(--sombra-cartao); }
+@media (max-width: 720px) {
+  .pagina { gap: 0; padding: 0; }
+  .pagina > nav { padding: var(--espaco-2) var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
+  .detalhe { border: 0; border-radius: 0; box-shadow: none; }
+}
