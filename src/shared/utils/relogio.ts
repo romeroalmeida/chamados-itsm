@@ -1,4 +1,6 @@
 export const CHAVE_RELOGIO = 'itsm:relogio'
+/** Evento disparado nesta aba ao reancorar o relógio (o evento `storage` só chega às outras abas). */
+export const EVENTO_RELOGIO = 'itsm:relogio'
 
 interface RelogioGravado { inicioVirtual: number; inicioReal: number; velocidade: number }
 
@@ -43,6 +45,7 @@ export function criarRelogio(storage: Storage): Relogio {
     velocidade: () => ler(storage)?.velocidade ?? 1,
     definirVelocidade(v) {
       gravar({ inicioVirtual: agora(), inicioReal: Date.now(), velocidade: v })
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EVENTO_RELOGIO))
     },
     resetar: () => storage.removeItem(CHAVE_RELOGIO),
   }

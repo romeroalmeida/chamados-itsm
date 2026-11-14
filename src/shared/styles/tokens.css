@@ -16,13 +16,13 @@
   --cor-interna-texto: #92400e;
 
   /* faixas de SLA (spec §6.2): cor forte + fundo suave */
-  --sla-ok: #16a34a;          --sla-ok-suave: #dcfce7;
-  --sla-atencao: #ca8a04;     --sla-atencao-suave: #fef9c3;
-  --sla-critico: #ea580c;     --sla-critico-suave: #ffedd5;
-  --sla-ultima-hora: #dc2626; --sla-ultima-hora-suave: #fee2e2;
-  --sla-vencido: #dc2626;     --sla-vencido-suave: #fee2e2;
-  --sla-pausado: #64748b;     --sla-pausado-suave: #e2e8f0;
-  --sla-encerrado: #8b94a3;   --sla-encerrado-suave: #f1f3f6;
+  --sla-ok: #15803d;          --sla-ok-suave: #dcfce7;
+  --sla-atencao: #a16207;     --sla-atencao-suave: #fef9c3;
+  --sla-critico: #c2410c;     --sla-critico-suave: #ffedd5;
+  --sla-ultima-hora: #b91c1c; --sla-ultima-hora-suave: #fee2e2;
+  --sla-vencido: #b91c1c;     --sla-vencido-suave: #fee2e2;
+  --sla-pausado: #475569;     --sla-pausado-suave: #e2e8f0;
+  --sla-encerrado: #5c6675;   --sla-encerrado-suave: #f1f3f6;
 
   --raio: 10px;
   --raio-pequeno: 8px;

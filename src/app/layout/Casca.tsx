@@ -8,10 +8,11 @@ import s from './Casca.module.css'
 const ROTULO_PERFIL = { consultor: 'Consultora', gestor: 'Gestor', cliente: 'Cliente' } as const
 
 export function Casca() {
-  const usuario = useSessao((st) => st.usuario)!
+  const usuario = useSessao((st) => st.usuario)
   const sair = useSessao((st) => st.sair)
   const nav = useNavigate()
   const { servidor } = useRealtime()
+  if (!usuario) return null
   return (
     <div className={s.casca}>
       <header className={s.topo}>

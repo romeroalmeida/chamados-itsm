@@ -1,5 +1,5 @@
 .viewport { position: fixed; bottom: 56px; right: 16px; display: grid; gap: var(--espaco-2); width: 360px; max-width: calc(100vw - 32px); z-index: 50; list-style: none; margin: 0; padding: 0; }
-.toast { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-left-width: 1px; border-radius: var(--raio); padding: var(--espaco-3); box-shadow: var(--sombra); display: grid; gap: var(--espaco-1); }
+.toast { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: var(--espaco-3); box-shadow: var(--sombra); display: grid; gap: var(--espaco-1); }
 .cabecalho { display: flex; align-items: center; gap: var(--espaco-2); }
 .ponto { width: 8px; height: 8px; border-radius: 999px; background: var(--cor-primaria); flex: none; }
 .erro .ponto { background: var(--sla-vencido); } .alerta .ponto { background: var(--sla-critico); }

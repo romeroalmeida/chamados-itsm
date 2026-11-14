@@ -55,7 +55,7 @@ export function criarRealtime(qc: QueryClient, socket: Socket): Realtime {
   })
 
   const substituirHistoricoDe = (chamadoId: string, novo: Historico[]) =>
-    [...espelho.historico.filter((h) => h.chamado_id !== chamadoId), ...novo].sort((a, b) => a.ocorrido_em.localeCompare(b.ocorrido_em))
+    [...espelho.historico.filter((h) => h.chamado_id !== chamadoId), ...novo].sort((a, b) => a.ocorrido_em.localeCompare(b.ocorrido_em) || a.id.localeCompare(b.id))
 
   const rt: Realtime = {
     hidratar: {
@@ -72,7 +72,7 @@ export function criarRealtime(qc: QueryClient, socket: Socket): Realtime {
           historico: substituirHistoricoDe(d.chamado.id, d.historico),
         }
       },
-      historico(h) { espelho = { ...espelho, historico: [...h].sort((a, b) => a.ocorrido_em.localeCompare(b.ocorrido_em)) } },
+      historico(h) { espelho = { ...espelho, historico: [...h].sort((a, b) => a.ocorrido_em.localeCompare(b.ocorrido_em) || a.id.localeCompare(b.id)) } },
       usuarios(u) { espelho = { ...espelho, usuarios: Object.fromEntries(u.map((x) => [x.id, x])) } },
     },
     onEvento(cb) { ouvintes.add(cb); return () => { ouvintes.delete(cb) } },
