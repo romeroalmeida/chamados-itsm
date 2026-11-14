@@ -1,0 +1,14 @@
+.pagina { padding: var(--espaco-4); display: grid; gap: var(--espaco-4); max-width: 1400px; margin: 0 auto; }
+.secao { display: grid; gap: var(--espaco-2); }
+.titulo { margin: 0; font-size: 16px; display: flex; gap: var(--espaco-2); align-items: baseline; }
+.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--espaco-3); }
+.cartao { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: var(--espaco-3); display: grid; gap: 6px; text-align: left; }
+.cartao:hover { border-color: var(--cor-primaria); }
+.semChamado { border-color: var(--sla-atencao); background: #fff9e8; }
+.nome { font-weight: 600; display: flex; justify-content: space-between; }
+.numeros { display: flex; gap: var(--espaco-3); font-size: 13px; color: var(--cor-texto-fraco); }
+.numeros strong { color: var(--cor-texto); }
+.vermelho { color: var(--sla-vencido) !important; } .laranja { color: var(--sla-critico) !important; }
+.tabela { width: 100%; border-collapse: collapse; background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); font-size: 13px; }
+.tabela th, .tabela td { padding: 8px 10px; border-bottom: 1px solid var(--cor-borda); text-align: left; }
+.link { background: none; border: 0; color: var(--cor-primaria); text-decoration: underline; padding: 0; }
