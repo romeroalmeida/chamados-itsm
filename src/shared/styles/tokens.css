@@ -26,6 +26,8 @@
 
   --raio: 10px;
   --raio-pequeno: 8px;
+  --raio-cartao: 14px;
+  --sombra-cartao: 0 1px 2px rgb(16 24 40 / 5%), 0 4px 14px -6px rgb(16 24 40 / 10%);
   --sombra: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 8%);
   --sombra-flutuante: 0 6px 18px rgb(16 24 40 / 18%);
   --fonte: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

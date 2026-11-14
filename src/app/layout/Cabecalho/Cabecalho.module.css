@@ -1,0 +1,27 @@
+.topo { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: var(--espaco-4); height: 56px; padding: 0 var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
+.marca { display: inline-flex; align-items: center; gap: 10px; flex: none; padding: 4px; margin-left: -4px; border-radius: var(--raio-pequeno); font-size: 15px; font-weight: 700; letter-spacing: -.02em; color: #1e1a6b; text-decoration: none; }
+.marcaIcone { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--cor-primaria); color: #fff; box-shadow: 0 4px 10px -4px rgb(79 70 229 / 60%); }
+.marcaIcone svg { width: 15px; height: 15px; }
+.nav { display: flex; gap: var(--espaco-1); min-width: 0; }
+.link { display: inline-flex; align-items: center; height: 32px; padding: 0 var(--espaco-3); border-radius: var(--raio-pequeno); font-weight: 500; color: var(--cor-texto-fraco); text-decoration: none; white-space: nowrap; transition: background var(--transicao), color var(--transicao); }
+.link:hover { background: var(--cor-superficie-2); color: var(--cor-texto); }
+.ativo, .ativo:hover { background: var(--cor-primaria-suave); color: var(--cor-primaria); font-weight: 600; }
+.espaco { flex: 1; }
+.abrir { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: var(--raio-pequeno); background: var(--cor-primaria); color: #fff; font-weight: 600; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px -6px rgb(79 70 229 / 70%); transition: background var(--transicao); }
+.abrir:hover { background: #4338ca; }
+.abrir svg { width: 16px; height: 16px; }
+.usuario { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.avatar { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--cor-primaria-suave); color: #3730a3; font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.quem { display: grid; line-height: 1.2; min-width: 0; }
+.quem strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quem small { font-size: 12px; color: var(--cor-texto-fraco); }
+.sair { height: 30px; padding: 0 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio-pequeno); background: var(--cor-superficie); font-size: 13px; font-weight: 500; color: var(--cor-texto-fraco); transition: background var(--transicao), color var(--transicao); }
+.sair:hover { background: var(--cor-superficie-2); color: var(--cor-texto); }
+
+@media (max-width: 720px) {
+  .topo { gap: var(--espaco-2); padding: 0 var(--espaco-3); }
+  .marcaTexto, .quem { display: none; }
+  .abrir { width: 34px; padding: 0; justify-content: center; }
+  /* some da tela, fica para o leitor de tela */
+  .abrirTexto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

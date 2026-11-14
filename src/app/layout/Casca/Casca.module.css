@@ -1,7 +1,4 @@
-.casca { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
-.topo { display: flex; align-items: center; gap: var(--espaco-4); padding: var(--espaco-2) var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
-.marca { font-weight: 700; }
-.espaco { flex: 1; }
-.usuario { color: var(--cor-texto-fraco); }
-.conteudo { min-height: 0; overflow: auto; }
-.faixaOffline { background: var(--sla-atencao-suave); color: var(--cor-interna-texto); padding: 4px 16px; font-size: 13px; }
+/* flex em coluna: a faixa offline é opcional e não pode roubar a linha 1fr do conteúdo */
+.casca { display: flex; flex-direction: column; height: 100%; }
+.conteudo { flex: 1; min-height: 0; overflow: auto; }
+.faixaOffline { background: var(--sla-atencao-suave); color: var(--cor-interna-texto); padding: 6px 16px; font-size: 13px; border-bottom: 1px solid var(--cor-interna-borda); }
