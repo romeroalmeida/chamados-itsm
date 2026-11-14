@@ -7,8 +7,8 @@ import { useNow } from '@/shared/hooks/useNow'
 import { formatarDataHora } from '@/shared/utils/datas'
 import { sugerirParecido } from '@/shared/utils/similaridade'
 import { useSessao } from '@/state/sessao'
-import { amigavel } from '../utils/categoriasAmigaveis'
-import s from './MeusChamadosPage.module.css'
+import { amigavel } from '../../utils/categoriasAmigaveis'
+import s from './NovoChamadoPage.module.css'
 
 export function NovoChamadoPage() {
   const usuario = useSessao((st) => st.usuario) as UsuarioCliente

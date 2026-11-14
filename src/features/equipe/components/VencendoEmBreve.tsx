@@ -1,6 +1,6 @@
 import type { Chamado, Usuario } from '@/shared/types'
 import { BadgePrazo } from '@/shared/components'
-import s from '../pages/EquipePage.module.css'
+import s from '../pages/EquipePage/EquipePage.module.css'
 
 export function VencendoEmBreve({ chamados, usuarios, agora, onAbrir }: { chamados: Chamado[]; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }) {
   if (chamados.length === 0) return <p style={{ color: 'var(--cor-texto-fraco)' }}>Nada vence nas próximas 4 horas.</p>

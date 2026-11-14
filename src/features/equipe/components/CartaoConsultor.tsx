@@ -1,6 +1,6 @@
 import type { AgregadoConsultor } from '@/shared/utils/equipe'
 import { formatarDuracao } from '@/shared/utils/datas'
-import s from '../pages/EquipePage.module.css'
+import s from '../pages/EquipePage/EquipePage.module.css'
 
 export function CartaoConsultor({ a, grupo, onAbrir }: { a: AgregadoConsultor; grupo: string; onAbrir: () => void }) {
   return (

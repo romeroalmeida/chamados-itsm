@@ -1,4 +1,4 @@
-import { Button } from './Button'
+import { Button } from '../Button/Button'
 import s from './Estado.module.css'
 
 export function Carregando({ linhas = 4 }: { linhas?: number }) {

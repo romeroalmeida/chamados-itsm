@@ -7,8 +7,8 @@ import { useNow } from '@/shared/hooks/useNow'
 import { formatarDiaHora } from '@/shared/utils/datas'
 import { ehEncerrado, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { useSessao } from '@/state/sessao'
-import { Novidades } from '../components/Novidades'
-import { rotuloStatus } from '../utils/rotulos'
+import { Novidades } from '../../components/Novidades'
+import { rotuloStatus } from '../../utils/rotulos'
 import s from './MeusChamadosPage.module.css'
 
 export function MeusChamadosPage() {

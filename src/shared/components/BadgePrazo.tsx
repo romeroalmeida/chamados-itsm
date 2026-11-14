@@ -1,5 +1,5 @@
 import type { Chamado } from '@/shared/types'
-import { Badge } from './Badge'
+import { Badge } from './Badge/Badge'
 import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { formatarRelativo } from '@/shared/utils/datas'
 

@@ -10,7 +10,7 @@ import { lerUltimaVisita, marcarVisita } from '@/shared/hooks/useUltimaVisita'
 import { relogio } from '@/shared/utils/relogio'
 import { useSessao } from '@/state/sessao'
 import { ROTA_INICIAL } from '@/shared/utils/rotas'
-import { entrar, PERSONAS, PIN_PADRAO } from '../services/entrar'
+import { entrar, PERSONAS, PIN_PADRAO } from '../../services/entrar'
 import s from './LoginPage.module.css'
 
 export function LoginPage() {

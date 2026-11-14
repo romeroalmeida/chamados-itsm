@@ -1,6 +1,6 @@
 import * as RT from '@radix-ui/react-toast'
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { Button } from './Button'
+import { Button } from '../Button/Button'
 import s from './Toast.module.css'
 
 export interface ToastItem { id: string; titulo: string; descricao?: string; tipo?: 'info' | 'erro' | 'alerta'; acao?: { rotulo: string; onClick: () => void }; duracaoMs?: number }

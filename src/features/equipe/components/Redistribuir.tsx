@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Chamado, Usuario, UsuarioConsultor } from '@/shared/types'
 import { useAtribuir } from '@/api/queries'
 import { BadgePrazo, Button, Select, useToast } from '@/shared/components'
-import s from '../pages/EquipePage.module.css'
+import s from '../pages/EquipePage/EquipePage.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; usuarios: Record<string, Usuario>; agora: number; onFechar: () => void }
 

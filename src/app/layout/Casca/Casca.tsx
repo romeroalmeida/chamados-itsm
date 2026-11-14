@@ -1,8 +1,8 @@
 import { Outlet, useNavigate } from 'react-router'
 import { Button } from '@/shared/components'
 import { useSessao } from '@/state/sessao'
-import { useRealtime } from '../providers/RealtimeProvider'
-import { PainelSimulador } from './PainelSimulador'
+import { useRealtime } from '../../providers/RealtimeProvider'
+import { PainelSimulador } from '../PainelSimulador/PainelSimulador'
 import s from './Casca.module.css'
 
 const ROTULO_PERFIL = { consultor: 'Consultora', gestor: 'Gestor', cliente: 'Cliente' } as const

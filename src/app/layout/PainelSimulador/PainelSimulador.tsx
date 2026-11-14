@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useRealtime } from '../providers/RealtimeProvider'
+import { useRealtime } from '../../providers/RealtimeProvider'
 import { relogio } from '@/shared/utils/relogio'
 import { useNow } from '@/shared/hooks/useNow'
 import { useSessao } from '@/state/sessao'

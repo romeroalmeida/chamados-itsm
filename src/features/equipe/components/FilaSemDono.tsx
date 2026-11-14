@@ -1,7 +1,7 @@
 import type { Chamado, Grupo, Usuario, UsuarioConsultor } from '@/shared/types'
 import { useAtribuir } from '@/api/queries'
 import { BadgePrazo, Select, useToast } from '@/shared/components'
-import s from '../pages/EquipePage.module.css'
+import s from '../pages/EquipePage/EquipePage.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; grupos: Grupo[]; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }
 

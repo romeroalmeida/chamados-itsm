@@ -2,7 +2,7 @@ import type { Chamado, Usuario } from '@/shared/types'
 import { Badge, BadgePrazo } from '@/shared/components'
 import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
 import { formatarDiaHora, formatarRelativo } from '@/shared/utils/datas'
-import { rotuloStatus } from '../utils/rotulos'
+import { rotuloStatus } from '../../utils/rotulos'
 import s from './detalhe.module.css'
 
 interface Props { chamado: Chamado; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; reabertoEm?: string; categoria?: string }

@@ -4,7 +4,7 @@ import { ChamadoPage, FilaConsultorPage, MeusChamadosPage, NovoChamadoPage } fro
 import { EquipePage } from '@/features/equipe'
 import { useSessao } from '@/state/sessao'
 import { ROTA_INICIAL } from '@/shared/utils/rotas'
-import { Casca } from '../layout/Casca'
+import { Casca } from '../layout/Casca/Casca'
 import { RotaProtegida } from './RotaProtegida'
 
 function Raiz() {

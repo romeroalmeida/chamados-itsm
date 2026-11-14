@@ -1,6 +1,6 @@
 import { useLocation, useParams } from 'react-router'
 import { useSessao } from '@/state/sessao'
-import { DetalheChamado } from '../components/DetalheChamado'
+import { DetalheChamado } from '../../components/DetalheChamado/DetalheChamado'
 
 export function ChamadoPage() {
   const { id } = useParams<{ id: string }>()
