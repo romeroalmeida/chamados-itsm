@@ -2718,7 +2718,7 @@ import * as RS from '@radix-ui/react-select'
 import s from './Select.module.css'
 
 export interface Opcao { valor: string; rotulo: string }
-interface Props { valor: string | undefined; onChange: (v: string) => void; opcoes: Opcao[]; placeholder?: string; ariaLabel: string; pequeno?: boolean }
+interface Props { valor: string | undefined; onChange: (v: string) => void; opcoes: Opcao[]; placeholder?: string; ariaLabel: string }
 
 export function Select({ valor, onChange, opcoes, placeholder = 'Selecione', ariaLabel }: Props) {
   return (
@@ -2751,12 +2751,12 @@ import type { ReactNode } from 'react'
 import s from './Tabs.module.css'
 
 export interface Aba { valor: string; rotulo: string; contador?: number }
-interface Props { abas: Aba[]; valor: string; onChange: (v: string) => void; children: ReactNode }
+interface Props { abas: Aba[]; valor: string; onChange: (v: string) => void; ariaLabel: string; children: ReactNode }
 
-export function Tabs({ abas, valor, onChange, children }: Props) {
+export function Tabs({ abas, valor, onChange, ariaLabel, children }: Props) {
   return (
     <RTabs.Root value={valor} onValueChange={onChange}>
-      <RTabs.List className={s.lista} aria-label="Filas">
+      <RTabs.List className={s.lista} aria-label={ariaLabel}>
         {abas.map((a) => (
           <RTabs.Trigger key={a.valor} value={a.valor} className={s.aba}>
             {a.rotulo}{a.contador !== undefined && <span className={s.contador}>{a.contador}</span>}
@@ -2904,7 +2904,10 @@ import { usuarioAtual } from '@/state/sessao'
 export const BASE_API = '/api'
 
 export class ApiError extends Error {
-  constructor(public status: number, public codigo: string, mensagem: string) { super(mensagem); this.name = 'ApiError' }
+  status: number
+  codigo: string
+  // sem parameter properties (erasableSyntaxOnly)
+  constructor(status: number, codigo: string, mensagem: string) { super(mensagem); this.name = 'ApiError'; this.status = status; this.codigo = codigo }
 }
 
 async function requisitar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
@@ -3034,13 +3037,13 @@ git commit -m "feat: sessão por aba, apiClient e queries do TanStack"
 
 **Files:**
 - Modify: `src/api/realtime.ts`
-- Create: `src/api/realtime.test.tsx`
+- Create: `src/api/realtime.test.ts`
 
 Spec §4.6. O espelho é um `Estado`; cada `GET` substitui uma fatia; cada evento aplica o `reducer` e projeta nos caches.
 
 - [ ] **Step 1: Teste**
 
-`src/api/realtime.test.tsx`:
+`src/api/realtime.test.ts`:
 ```ts
 import { QueryClient } from '@tanstack/react-query'
 import { criarRealtime } from './realtime'
@@ -3221,7 +3224,7 @@ Run: `pnpm test src/api/realtime` → PASS
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/api/realtime.ts src/api/realtime.test.tsx
+git add src/api/realtime.ts src/api/realtime.test.ts
 git commit -m "feat: espelho de estado no cliente com hidratação e projeção para o TanStack Query"
 ```
 
@@ -3250,6 +3253,8 @@ describe('datas', () => {
     expect(formatarDuracao(98 * 60_000)).toBe('1h 38')
     expect(formatarDuracao(5 * 60_000)).toBe('5 min')
     expect(formatarDuracao(30 * 3_600_000)).toBe('1 d 6h')
+    expect(formatarDuracao(24 * 3_600_000)).toBe('1 d')
+    expect(formatarDuracao(3 * 3_600_000)).toBe('3h')
   })
   it('relativo: vence em / venceu há', () => {
     expect(formatarRelativo(40 * 60_000)).toBe('vence em 40 min')
@@ -3275,8 +3280,8 @@ export function formatarDiaHora(iso: string, fuso: Fuso): string {
 export function formatarDuracao(ms: number): string {
   const total = Math.max(0, Math.round(ms / 60_000))
   const d = Math.floor(total / 1440), h = Math.floor((total % 1440) / 60), m = total % 60
-  if (d > 0) return `${d} d ${h}h`
-  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}`
+  if (d > 0) return h > 0 ? `${d} d ${h}h` : `${d} d`
+  if (h > 0) return m > 0 ? `${h}h ${String(m).padStart(2, '0')}` : `${h}h`
   return `${m} min`
 }
 
@@ -3296,14 +3301,16 @@ import { relogio, CHAVE_RELOGIO } from '@/shared/utils/relogio'
 /** Único "agora" da UI (spec §4.5). Reavalia por intervalo e quando outra aba reancora o relógio. */
 export function useNow(intervaloMs?: number): number {
   const [agora, setAgora] = useState(() => relogio.agora())
+  const [velocidade, setVelocidade] = useState(() => relogio.velocidade())
   useEffect(() => {
-    const tick = () => setAgora(relogio.agora())
-    const periodo = intervaloMs ?? (relogio.velocidade() >= 20 ? 5_000 : 30_000)
+    const tick = () => { setAgora(relogio.agora()); setVelocidade(relogio.velocidade()) }
+    const periodo = intervaloMs ?? (velocidade >= 20 ? 5_000 : 30_000)
     const t = setInterval(tick, periodo)
+    // outra aba (ou o painel desta) reancorou o relógio: reavalia e, se a velocidade mudou, o effect reinicia com novo período
     const onStorage = (e: StorageEvent) => { if (e.key === CHAVE_RELOGIO) tick() }
     window.addEventListener('storage', onStorage)
     return () => { clearInterval(t); window.removeEventListener('storage', onStorage) }
-  }, [intervaloMs])
+  }, [intervaloMs, velocidade])
   return agora
 }
 ```
@@ -3350,7 +3357,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 
 `src/app/providers/RealtimeProvider.tsx`:
 ```tsx
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { criarRealtime, type Realtime } from '@/api/realtime'
 import type { MockServer } from '@/mock-server'
 import { queryClient } from './QueryProvider'
@@ -3358,10 +3365,20 @@ import { queryClient } from './QueryProvider'
 interface Ctx { realtime: Realtime; servidor: MockServer }
 const RealtimeCtx = createContext<Ctx | null>(null)
 
+/**
+ * Cria o realtime num effect, não em useMemo: em StrictMode o useMemo roda duas vezes, o React guarda a
+ * primeira instância mas a global `instancia` de realtime.ts aponta para a segunda, e o cleanup do
+ * StrictMode desassina a instância do contexto. Com effect + cleanup, mount → unmount → mount fica correto.
+ */
 export function RealtimeProvider({ servidor, children }: { servidor: MockServer; children: ReactNode }) {
-  const realtime = useMemo(() => criarRealtime(queryClient, servidor.socket), [servidor])
-  useEffect(() => () => realtime.parar(), [realtime])
-  const ctx = useMemo(() => ({ realtime, servidor }), [realtime, servidor])
+  const [realtime, setRealtime] = useState<Realtime | null>(null)
+  useEffect(() => {
+    const rt = criarRealtime(queryClient, servidor.socket)
+    setRealtime(rt)
+    return () => rt.parar()
+  }, [servidor])
+  const ctx = useMemo(() => (realtime ? { realtime, servidor } : null), [realtime, servidor])
+  if (!ctx) return null
   return <RealtimeCtx.Provider value={ctx}>{children}</RealtimeCtx.Provider>
 }
 
@@ -3376,7 +3393,7 @@ export function useRealtime(): Ctx {
 
 `src/app/routes/RotaProtegida.tsx`:
 ```tsx
-import { Navigate, Outlet, useLocation } from 'react-router'
+import { Link, Navigate, Outlet, useLocation } from 'react-router'
 import type { Perfil } from '@/shared/types'
 import { useSessao } from '@/state/sessao'
 
@@ -3390,7 +3407,7 @@ export function RotaProtegida({ perfis }: { perfis?: Perfil[] }) {
     return (
       <main style={{ padding: 24 }}>
         <h1>Sem acesso</h1>
-        <p>Esta tela não é do seu perfil. <a href={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</a></p>
+        <p>Esta tela não é do seu perfil. <Link to={ROTA_INICIAL[usuario.perfil]}>Ir para a minha tela</Link></p>
       </main>
     )
   }
@@ -3400,7 +3417,7 @@ export function RotaProtegida({ perfis }: { perfis?: Perfil[] }) {
 
 `src/app/routes/index.tsx`:
 ```tsx
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router'
 import { LoginPage } from '@/features/auth'
 import { ChamadoPage, FilaConsultorPage, MeusChamadosPage, NovoChamadoPage } from '@/features/chamados'
 import { EquipePage } from '@/features/equipe'
@@ -3433,7 +3450,7 @@ export function Rotas() {
               <Route path="/meus-chamados" element={<MeusChamadosPage />} />
               <Route path="/meus-chamados/novo" element={<NovoChamadoPage />} />
             </Route>
-            <Route path="*" element={<main style={{ padding: 24 }}><h1>Página não encontrada</h1><a href="/">Voltar</a></main>} />
+            <Route path="*" element={<main style={{ padding: 24 }}><h1>Página não encontrada</h1><Link to="/">Ir para a minha tela</Link></main>} />
           </Route>
         </Route>
       </Routes>
@@ -3442,7 +3459,18 @@ export function Rotas() {
 }
 ```
 
-As páginas importadas ainda não existem; criar **stubs** nos barrels para o typecheck passar. `src/features/auth/index.ts`: `export function LoginPage() { return <p>login</p> }` (arquivo `.tsx`; ajustar o barrel para `index.tsx` ou criar `pages/LoginPage.tsx` com o stub e reexportar). Idem para `chamados` (`ChamadoPage`, `FilaConsultorPage`, `MeusChamadosPage`, `NovoChamadoPage`) e `equipe` (`EquipePage`). As Tasks 19 a 23 substituem os stubs.
+As páginas importadas ainda não existem. Criar **stubs** em arquivos `.tsx` dentro de `pages/` (nunca JSX em `.ts`) e barrels `.ts` que só reexportam:
+
+`src/features/auth/pages/LoginPage.tsx`: `export function LoginPage() { return <p>login</p> }` · `src/features/auth/index.ts`: `export { LoginPage } from './pages/LoginPage'`.
+
+`src/features/chamados/pages/{ChamadoPage,FilaConsultorPage,MeusChamadosPage,NovoChamadoPage}.tsx` com o mesmo padrão · `src/features/chamados/index.ts`:
+```ts
+export { ChamadoPage } from './pages/ChamadoPage'
+export { FilaConsultorPage } from './pages/FilaConsultorPage'
+export { MeusChamadosPage } from './pages/MeusChamadosPage'
+export { NovoChamadoPage } from './pages/NovoChamadoPage'
+```
+`src/features/equipe/pages/EquipePage.tsx` e `src/features/equipe/index.ts` idem. As Tasks 18 a 22 substituem os stubs pelas páginas reais, mantendo os barrels.
 
 - [ ] **Step 5: Casca**
 
@@ -3481,6 +3509,7 @@ export function Casca() {
         <span className={s.usuario}>{usuario.nome} · {ROTULO_PERFIL[usuario.perfil]}</span>
         <Button pequeno onClick={() => { sair(); nav('/entrar') }}>Sair</Button>
       </header>
+      {/* lido uma vez por render: a conectividade do bus é fixa por aba */}
       {servidor.socket.estado() === 'desconectado' && <div className={s.faixaOffline} role="status">Sem atualização em tempo real nesta aba. Os dados são recarregados ao voltar o foco.</div>}
       <main className={s.conteudo}><Outlet /></main>
       <PainelSimulador />
@@ -3596,16 +3625,23 @@ describe('LoginPage', () => {
     expect(useSessao.getState().usuario).toBeNull()
   })
 
-  it('consultora entra e vai para /fila; cliente vai para /meus-chamados', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(MARINA), { status: 200 }))
+  it('consultora entra e vai para /fila', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(MARINA), { status: 200 }))
     montar()
     await userEvent.type(screen.getByLabelText(/e-mail/i), MARINA.email)
     await userEvent.type(screen.getByLabelText(/pin/i), '123456')
     await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
     await waitFor(() => expect(screen.getByText('tela da fila')).toBeInTheDocument())
     expect(useSessao.getState().usuario?.id).toBe(MARINA.id)
-    useSessao.getState().sair()
-    fetchMock.mockResolvedValue(new Response(JSON.stringify(HELENA), { status: 200 }))
+  })
+
+  it('cliente entra e vai para /meus-chamados', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(HELENA), { status: 200 }))
+    montar()
+    await userEvent.type(screen.getByLabelText(/e-mail/i), HELENA.email)
+    await userEvent.type(screen.getByLabelText(/pin/i), '123456')
+    await userEvent.click(screen.getByRole('button', { name: /entrar/i }))
+    await waitFor(() => expect(screen.getByText('tela do cliente')).toBeInTheDocument())
   })
 
   it('"quem posso ser?" preenche o e-mail', async () => {
@@ -3649,8 +3685,12 @@ export const PIN_PADRAO = '123456'
 `src/features/auth/pages/LoginPage.tsx`:
 ```tsx
 import { useState, type FormEvent } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useLocation, useNavigate } from 'react-router'
+import type { Usuario } from '@/shared/types'
+import { api } from '@/api/apiClient'
+import { chaves } from '@/api/queries/chaves'
+import { hidratar } from '@/api/realtime'
 import { Button, Campo } from '@/shared/components'
 import { useSessao } from '@/state/sessao'
 import { ROTA_INICIAL } from '@/app/routes/RotaProtegida'
@@ -3661,13 +3701,19 @@ export function LoginPage() {
   const usuario = useSessao((st) => st.usuario)
   const guardar = useSessao((st) => st.entrar)
   const nav = useNavigate()
+  const qc = useQueryClient()
   const loc = useLocation() as { state?: { de?: string } }
   const [email, setEmail] = useState('')
   const [pin, setPin] = useState('')
   const [mostrarPersonas, setMostrarPersonas] = useState(false)
   const m = useMutation({
     mutationFn: () => entrar(email.trim(), pin),
-    onSuccess(u) { guardar(u); nav(loc.state?.de && loc.state.de !== '/' ? loc.state.de : ROTA_INICIAL[u.perfil], { replace: true }) },
+    onSuccess(u) {
+      guardar(u)
+      // hidrata `usuarios` do espelho já no login (spec §4.6): o reducer precisa do perfil do autor
+      void qc.prefetchQuery({ queryKey: chaves.usuarios, queryFn: async () => { const d = await api.get<Usuario[]>('/usuarios'); hidratar.usuarios(d); return d } })
+      nav(loc.state?.de && loc.state.de !== '/' ? loc.state.de : ROTA_INICIAL[u.perfil], { replace: true })
+    },
   })
   if (usuario) return <Navigate to={ROTA_INICIAL[usuario.perfil]} replace />
 
@@ -4096,9 +4142,10 @@ export function CabecalhoChamado({ chamado, usuario, usuarios, agora, reabertoEm
 
 `src/features/chamados/components/DetalheChamado.tsx`:
 ```tsx
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Usuario, UsuarioConsultor } from '@/shared/types'
 import { useChamado, useCategorias, useMapaUsuarios } from '@/api/queries'
+import { relogio } from '@/shared/utils/relogio'
 import { Carregando, Erro, Tabs } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { useUltimaVisita } from '@/shared/hooks/useUltimaVisita'
@@ -4120,8 +4167,9 @@ export function DetalheChamado({ id, usuario, reabrirInicial, textoInicial }: Pr
   const [digitando, setDigitando] = useState(false)
   const [aba, setAba] = useState('conversa')
   const [, marcarVisita] = useUltimaVisita(usuario.id, id)
-  // marca "vi este chamado" sempre que a conversa cresce enquanto estou nele
-  useMemo(() => { if (q.data) marcarVisita(Date.now()) }, [q.data?.mensagens.length, marcarVisita]) // eslint-disable-line react-hooks/exhaustive-deps
+  // marca "vi este chamado" sempre que a conversa cresce enquanto estou nele; relógio VIRTUAL, o mesmo de atualizado_em
+  const totalMensagens = q.data?.mensagens.length
+  useEffect(() => { if (totalMensagens !== undefined) marcarVisita(relogio.agora()) }, [totalMensagens, marcarVisita])
 
   if (q.isPending) return <Carregando />
   if (q.isError) return <Erro erro={q.error} tentar={() => q.refetch()} />
@@ -4142,7 +4190,7 @@ export function DetalheChamado({ id, usuario, reabrirInicial, textoInicial }: Pr
       {cliente
         ? <Conversa mensagens={mensagens} usuarios={usuarios} usuario={usuario} digitando={digitando} />
         : (
-          <Tabs abas={[{ valor: 'conversa', rotulo: 'Conversa', contador: mensagens.length }, { valor: 'historico', rotulo: 'Histórico', contador: historico.length }]} valor={aba} onChange={setAba}>
+          <Tabs ariaLabel="Conversa e histórico" abas={[{ valor: 'conversa', rotulo: 'Conversa', contador: mensagens.length }, { valor: 'historico', rotulo: 'Histórico', contador: historico.length }]} valor={aba} onChange={setAba}>
             {aba === 'conversa'
               ? <Conversa mensagens={mensagens} usuarios={usuarios} usuario={usuario} digitando={digitando} />
               : <HistoricoLista historico={historico} usuarios={usuarios} usuario={usuario} />}
@@ -4188,6 +4236,8 @@ git commit -m "feat: detalhe de chamado compartilhado com conversa virtualizada,
 ```
 
 **Fim do Chunk 2.** Nesta altura é possível entrar e abrir qualquer chamado por URL, com tempo real funcionando entre abas.
+
+> Validação do chunk (14/11/2026): montado em rascunho sobre o Chunk 1; com as correções já incorporadas acima, typecheck limpo e 107/107 testes verdes. O bug do `RealtimeProvider` em StrictMode só aparece em `pnpm dev`; `pnpm build && pnpm preview` não o revela.
 
 ---
 
@@ -4486,7 +4536,7 @@ export function FilaConsultorPage() {
     <div className={s.pagina}>
       <section className={`${s.fila} ${id ? s.comDetalhe : ''}`} aria-label="Fila">
         <FaixaAlerta resumo={resumo} onFiltrar={(qual) => { setFiltro((f) => ({ ...f, aba: 'meus', status: 'ativos' })); setSoAlerta((a) => (a === qual ? null : qual)) }} />
-        <Tabs abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Do grupo, sem dono', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => { setFiltro((f) => ({ ...f, aba: v as AbaFila })); setSoAlerta(null) }}>
+        <Tabs ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Do grupo, sem dono', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => { setFiltro((f) => ({ ...f, aba: v as AbaFila })); setSoAlerta(null) }}>
           <div className={s.filtros}>
             <input className={s.busca} type="search" placeholder="Número, título ou cliente" aria-label="Buscar chamado" value={filtro.busca} onChange={(e) => setFiltro((f) => ({ ...f, busca: e.target.value }))} />
             <Select ariaLabel="Status" valor={filtro.status} onChange={(v) => setFiltro((f) => ({ ...f, status: v as FiltroStatus }))} opcoes={OPCOES_STATUS} />
