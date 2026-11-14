@@ -1,0 +1,10 @@
+.pagina { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 100%; min-height: 0; }
+.fila { display: grid; grid-template-rows: auto auto 1fr; min-height: 0; border-right: 1px solid var(--cor-borda); background: var(--cor-superficie); }
+.filtros { display: flex; gap: var(--espaco-2); padding: var(--espaco-2) var(--espaco-3); flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--cor-borda); }
+.busca { flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid var(--cor-borda); border-radius: var(--raio); }
+.detalhe { min-height: 0; }
+.vazioDetalhe { display: grid; place-items: center; height: 100%; color: var(--cor-texto-fraco); }
+@media (max-width: 900px) {
+  .pagina { grid-template-columns: 1fr; }
+  .fila.comDetalhe { display: none; }
+}
