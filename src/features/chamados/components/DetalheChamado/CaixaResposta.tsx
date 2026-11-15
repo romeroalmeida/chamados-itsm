@@ -36,9 +36,9 @@ export function CaixaResposta({ chamadoId, usuario, onDigitando, textoInicial = 
         placeholder={interna ? 'Anotação para colegas…' : 'Escreva sua resposta…'}
         onChange={(e) => { setTexto(e.target.value); onDigitando(e.target.value.trim().length > 0) }}
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) mandar() }} />
-      <div className={s.caixaLinha}>
-        <Button variante="primaria" onClick={mandar} disabled={enviar.isPending || !texto.trim()}>{interna ? 'Salvar nota' : 'Enviar'}</Button>
+      <div className={`${s.caixaLinha} ${s.envio}`}>
         <small className={s.dica}>Ctrl + Enter envia</small>
+        <Button variante="primaria" onClick={mandar} disabled={enviar.isPending || !texto.trim()}>{interna ? 'Salvar nota' : 'Enviar'}</Button>
       </div>
     </div>
   )

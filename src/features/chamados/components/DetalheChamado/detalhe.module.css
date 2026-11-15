@@ -35,6 +35,7 @@
 /* caixa de resposta */
 .caixa { border-top: 1px solid var(--cor-borda); padding: var(--espaco-3) var(--espaco-6); display: grid; gap: var(--espaco-2); background: var(--cor-superficie); }
 .caixaLinha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.envio { justify-content: flex-end; }
 .dica { color: var(--cor-texto-sutil); font-size: 12px; }
 .segmentado { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--raio-pequeno); background: var(--cor-superficie-2); }
 .segmento { position: relative; display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 6px; font-size: 12.5px; font-weight: 500; color: var(--cor-texto-fraco); cursor: pointer; transition: background var(--transicao), color var(--transicao), box-shadow var(--transicao); }
