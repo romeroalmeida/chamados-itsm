@@ -14,7 +14,7 @@
 .barraPrazo small { font-weight: 500; opacity: .85; }
 .descricao { margin: 0; max-width: 80ch; color: var(--cor-texto-fraco); white-space: pre-wrap; }
 .barraAcoes { padding: var(--espaco-2) var(--espaco-6); border-bottom: 1px solid var(--cor-borda); }
-.acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.acoes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
 /* conversa */
 .conversa { position: relative; overflow: auto; min-height: 0; padding: var(--espaco-4) var(--espaco-6); background: var(--cor-fundo); }
