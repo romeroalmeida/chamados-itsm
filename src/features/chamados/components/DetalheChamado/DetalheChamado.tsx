@@ -10,11 +10,10 @@ import { useUltimaVisita } from '@/shared/hooks/useUltimaVisita'
 import { ehReabertura } from '@/shared/utils/status'
 import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { AcoesStatus } from './AcoesStatus'
-import { CabecalhoChamado } from './CabecalhoChamado'
 import { CaixaResposta } from './CaixaResposta'
 import { Conversa } from './Conversa'
 import { CabecalhoEquipe } from './CabecalhoEquipe'
-import { PassosCliente } from './HistoricoLista'
+import { DetalheCliente } from './DetalheCliente'
 import s from './detalhe.module.css'
 
 interface Props { id: string; usuario: Usuario; reabrirInicial?: string }
@@ -53,19 +52,7 @@ export function DetalheChamado({ id, usuario, reabrirInicial }: Props) {
   const acoes = <AcoesStatus chamado={chamado} usuario={usuario} consultoresDoGrupo={consultoresDoGrupo} reabrirInicial={reabrirInicial} onMensagemFalhou={setTextoCaixa} />
   const solicitante = usuarios[chamado.solicitante_id]
 
-  if (cliente) {
-    return (
-      <article className={s.detalhe} aria-label={`Chamado ${chamado.numero}`}>
-        <div>
-          <CabecalhoChamado chamado={chamado} usuario={usuario} usuarios={usuarios} agora={agora} reabertoEm={reabertoEm} />
-          <div className={s.barraAcoes}>{acoes}</div>
-          <PassosCliente historico={historico} usuario={usuario} />
-        </div>
-        <Conversa mensagens={mensagens} usuarios={usuarios} usuario={usuario} digitando={digitando} />
-        <CaixaResposta key={textoCaixa} chamadoId={chamado.id} usuario={usuario} onDigitando={setDigitando} textoInicial={textoCaixa} />
-      </article>
-    )
-  }
+  if (cliente) return <DetalheCliente detalhe={q.data} usuario={usuario} usuarios={usuarios} acoes={acoes} textoCaixa={textoCaixa} />
 
   const ultimaPublica = mensagens.findLast((m) => m.interna !== true)
   return (

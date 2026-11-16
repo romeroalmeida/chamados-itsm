@@ -78,3 +78,23 @@ export function novidadesDesde(itens: DetalheCliente[], ultimaMs: number, usuari
   }
   return r.sort((a, b) => a.em.localeCompare(b.em))
 }
+
+export interface Acontecimento { id: string; em: string; texto: string }
+
+/** "O que aconteceu até agora": o histórico de status em frases curtas. A cliente recebe o histórico sem motivo (spec §5.4). */
+export function linhaDoTempoCliente(c: Chamado, historico: Historico[], usuarioId: string, nomes: Record<string, string>): Acontecimento[] {
+  const r: Acontecimento[] = [{ id: 'abertura', em: c.aberto_em, texto: 'Você abriu o chamado' }]
+  for (const h of historico) {
+    if (h.tipo !== 'status' || !h.para) continue
+    const eu = h.usuario_id === usuarioId
+    const quem = eu ? 'Você' : nomes[h.usuario_id] ?? 'A equipe'
+    const texto = h.de && ehReabertura(h.de, h.para) ? `${quem} reabriu o chamado`
+      : h.para === 'em_atendimento' && h.de === 'aberto' ? `${quem} pegou o chamado`
+        : h.para === 'em_atendimento' ? (eu ? 'Você respondeu e o atendimento seguiu' : `${quem} retomou o atendimento`)
+          : h.para === 'aguardando_cliente' ? `${quem} pediu mais informações`
+            : h.para === 'resolvido' ? `${quem} marcou como resolvido`
+              : eu ? 'Você confirmou que resolveu' : `${quem} encerrou o chamado`
+    r.push({ id: h.id, em: h.ocorrido_em, texto })
+  }
+  return r.sort((a, b) => a.em.localeCompare(b.em))
+}

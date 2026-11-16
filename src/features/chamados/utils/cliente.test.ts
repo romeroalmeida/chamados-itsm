@@ -1,4 +1,4 @@
-import { novidadesDesde, proximoPasso, type DetalheCliente } from './cliente'
+import { linhaDoTempoCliente, novidadesDesde, proximoPasso, type DetalheCliente } from './cliente'
 import { AGORA_MS, DADOS, HELENA, chamadoPorNumero } from '@/tests/fixtures/dados'
 
 const nomes = Object.fromEntries(DADOS.usuarios.map((u) => [u.id, u.nome]))
@@ -50,5 +50,18 @@ describe('novidadesDesde', () => {
     const itens = [10611, 10612, 10613, 10614].map(detalhe)
     expect(novidadesDesde(itens, AGORA_MS, HELENA.id, AGORA_MS, nomes)).toEqual([])
     expect(novidadesDesde(itens, 0, HELENA.id, AGORA_MS, nomes).some((n) => n.texto.startsWith('Helena'))).toBe(false)
+  })
+})
+
+describe('linhaDoTempoCliente', () => {
+  it('#10611 em frases: abriu, pegou, resolveu, encerrou, reabriu', () => {
+    const d = detalhe(10611)
+    expect(linhaDoTempoCliente(d.chamado, d.historico, HELENA.id, nomes).map((a) => a.texto)).toEqual([
+      'Você abriu o chamado',
+      'Marina Almeida pegou o chamado',
+      'Marina Almeida marcou como resolvido',
+      'Marina Almeida encerrou o chamado',
+      'Marina Almeida reabriu o chamado',
+    ])
   })
 })

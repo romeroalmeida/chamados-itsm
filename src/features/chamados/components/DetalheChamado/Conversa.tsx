@@ -67,7 +67,7 @@ export function Conversa({ mensagens, usuarios, usuario, digitando, historico, a
   const nome = (id: string) => (id === usuario.id ? 'Você' : usuarios[id]?.nome ?? 'Alguém')
 
   return (
-    <div className={`${s.conversa} ${recolher !== undefined ? s.conversaCliente : ''}`} ref={ref} onScroll={aoRolar} aria-label="Conversa">
+    <div className={s.conversa} ref={ref} onScroll={aoRolar} aria-label="Conversa">
       {ocultas > 0 && (
         <button type="button" className={s.maisAntigas} onClick={() => setExpandido(true)}>
           {ocultas === 1 ? 'Mostrar a mensagem anterior' : `Mostrar as ${ocultas} mensagens anteriores`}

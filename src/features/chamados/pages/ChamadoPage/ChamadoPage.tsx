@@ -12,6 +12,15 @@ export function ChamadoPage() {
   // mesma query do detalhe (cache compartilhado): só para o número na trilha
   const numero = useChamado(id).data?.chamado.numero
   if (!id) return null
+  // a cliente lê o chamado como página (rola inteira); a equipe trabalha num painel de altura fixa
+  if (usuario.perfil === 'cliente') {
+    return (
+      <div className={s.paginaCliente}>
+        <Trilha perfil="cliente" numero={numero} usarHistorico />
+        <DetalheChamado id={id} usuario={usuario} reabrirInicial={loc.state?.reabrir} />
+      </div>
+    )
+  }
   return (
     <div className={s.pagina}>
       <Trilha perfil={usuario.perfil} numero={numero} usarHistorico />
