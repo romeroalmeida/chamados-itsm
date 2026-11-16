@@ -12,9 +12,16 @@ describe('visivelPara', () => {
   it('consultor vê o próprio grupo', () => {
     const grupo = MARINA.perfil === 'consultor' ? MARINA.grupo_id : ''
     const doGrupo = DADOS.chamados.find((c) => c.grupo_id === grupo)!
-    const deOutro = DADOS.chamados.find((c) => c.grupo_id !== grupo)!
+    const deOutro = DADOS.chamados.find((c) => c.grupo_id !== grupo && c.responsavel_id !== MARINA.id)!
     expect(visivelPara(MARINA, doGrupo)).toBe(true)
     expect(visivelPara(MARINA, deOutro)).toBe(false)
+  })
+  it('consultor vê o chamado de que é responsável mesmo fora do grupo (#10608 no dados.json)', () => {
+    const c10608 = DADOS.chamados.find((c) => c.numero === 10608)!
+    const grupo = MARINA.perfil === 'consultor' ? MARINA.grupo_id : ''
+    expect(c10608.grupo_id).not.toBe(grupo)
+    expect(c10608.responsavel_id).toBe(MARINA.id)
+    expect(visivelPara(MARINA, c10608)).toBe(true)
   })
   it('gestor vê os grupos que gere (os dois)', () => {
     expect(DADOS.chamados.every((c) => visivelPara(RICARDO, c))).toBe(true)

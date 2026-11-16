@@ -81,10 +81,11 @@ describe('GET /chamados e /chamados/:id', () => {
       expect(det.historico.every((h: { tipo: string; motivo: null }) => h.tipo === 'status' && h.motivo === null)).toBe(true)
     }
   })
-  it('consultor vê só o grupo; chamado de outro grupo é 403', async () => {
+  it('consultor vê o grupo e os chamados de que é responsável; outro grupo é 403', async () => {
     const lista = await (await get('/chamados', MARINA)).json()
-    expect(lista.every((c: { grupo_id: string }) => c.grupo_id === grupoMarina)).toBe(true)
-    const outro = DADOS.chamados.find((c) => c.grupo_id !== grupoMarina)!
+    expect(lista.every((c: { grupo_id: string; responsavel_id: string | null }) => c.grupo_id === grupoMarina || c.responsavel_id === MARINA.id)).toBe(true)
+    expect(lista.some((c: { numero: number }) => c.numero === 10608)).toBe(true) // dela, mas do grupo Aplicações
+    const outro = DADOS.chamados.find((c) => c.grupo_id !== grupoMarina && c.responsavel_id !== MARINA.id)!
     expect((await get(`/chamados/${outro.id}`, MARINA)).status).toBe(403)
   })
   it('gestor vê tudo e GET /historico; cliente em /historico é 403', async () => {
@@ -101,7 +102,7 @@ describe('GET /mensagens/ultimas', () => {
   type Ultima = { chamado_id: string; autor_id: string; criada_em: string }
   it('uma entrada por chamado visível, com a última mensagem não interna', async () => {
     const r: Ultima[] = await (await get('/mensagens/ultimas', MARINA)).json()
-    const doGrupo = new Set(DADOS.chamados.filter((c) => c.grupo_id === grupoMarina).map((c) => c.id))
+    const doGrupo = new Set(DADOS.chamados.filter((c) => c.grupo_id === grupoMarina || c.responsavel_id === MARINA.id).map((c) => c.id))
     expect(r.length).toBeGreaterThan(0)
     expect(r.every((u) => doGrupo.has(u.chamado_id))).toBe(true)
     const c10611 = DADOS.chamados.find((c) => c.numero === 10611)!

@@ -2,7 +2,8 @@ import { gruposDo, type Chamado, type Historico, type Mensagem, type Usuario } f
 
 export function visivelPara(usuario: Usuario, chamado: Chamado): boolean {
   if (usuario.perfil === 'cliente') return chamado.solicitante_id === usuario.id
-  return gruposDo(usuario).includes(chamado.grupo_id)
+  // quem é responsável vê o chamado mesmo fora do grupo (ex.: #10608 da Marina está no grupo Aplicações)
+  return chamado.responsavel_id === usuario.id || gruposDo(usuario).includes(chamado.grupo_id)
 }
 
 export function mensagemVisivel(usuario: Usuario, mensagem: Mensagem): boolean {
