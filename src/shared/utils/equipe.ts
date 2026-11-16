@@ -9,8 +9,13 @@ export interface AgregadoConsultor {
   ativos: number
   vencidos: number
   vencendo4h: number
+  /** Aguardando o cliente: SLA pausado. */
+  pausados: number
   ociosoMs: number
 }
+
+/** A partir de quantos vencidos o cartão do consultor ganha "Sobrecarregado" e o atalho de redistribuir. */
+export const LIMITE_SOBRECARGA = 15
 
 const ATIVO = (s: Chamado['status']) => s === 'em_atendimento' || s === 'aguardando_cliente'
 
@@ -68,7 +73,18 @@ export function agregadosPorConsultor(consultores: UsuarioConsultor[], chamados:
       ativos: dele.length,
       vencidos: faixas.filter((f) => f === 'vencido').length,
       vencendo4h: faixas.filter((f) => f === 'critico' || f === 'ultima_hora').length,
+      pausados: faixas.filter((f) => f === 'pausado').length,
       ociosoMs: ociosoNaJanela(consultor.id, historico, chamados, agoraMs),
     }
   }).sort((a, b) => b.vencidos - a.vencidos || b.ativos - a.ativos)
+}
+
+/**
+ * Sugestão de destino para redistribuir (só sugestão, o gestor escolhe): mesmo grupo, menos chamados ativos,
+ * desempate por mais tempo ocioso na semana. Só sugere quem tem menos ativos que a origem.
+ */
+export function sugerirDestino(origem: AgregadoConsultor, todos: AgregadoConsultor[]): AgregadoConsultor | null {
+  return todos
+    .filter((a) => a.consultor.grupo_id === origem.consultor.grupo_id && a.consultor.id !== origem.consultor.id && a.ativos < origem.ativos)
+    .sort((a, b) => a.ativos - b.ativos || b.ociosoMs - a.ociosoMs)[0] ?? null
 }

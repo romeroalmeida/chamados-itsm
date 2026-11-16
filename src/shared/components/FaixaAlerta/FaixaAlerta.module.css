@@ -1,4 +1,0 @@
-.faixa { display: flex; flex-wrap: wrap; align-items: center; gap: var(--espaco-1) 14px; padding: 9px var(--espaco-4); border-bottom: 1px solid var(--cor-borda); background: var(--sla-vencido-suave); color: var(--sla-vencido); font-weight: 600; }
-.ponto { flex: none; width: 8px; height: 8px; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 4px rgb(185 28 28 / 14%); }
-.filtro { padding: 0; border: 0; border-radius: 4px; background: none; color: inherit; font-weight: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(185 28 28 / 40%); transition: text-decoration-color var(--transicao); }
-.filtro:hover { text-decoration-color: currentColor; }

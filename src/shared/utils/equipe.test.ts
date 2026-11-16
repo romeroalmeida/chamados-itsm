@@ -1,4 +1,4 @@
-import { agregadosPorConsultor, ociosoNaJanela } from './equipe'
+import { agregadosPorConsultor, LIMITE_SOBRECARGA, ociosoNaJanela, sugerirDestino, type AgregadoConsultor } from './equipe'
 import { AGORA_MS, DADOS, MARINA, RICARDO } from '@/tests/fixtures/dados'
 import type { Chamado, Historico, UsuarioConsultor } from '@/shared/types'
 
@@ -39,5 +39,24 @@ describe('agregadosPorConsultor', () => {
     expect(marina.vencidos + marina.vencendo4h).toBeLessThanOrEqual(42)
     expect(ag[0]!.vencidos).toBeGreaterThanOrEqual(ag[1]!.vencidos)
     expect(RICARDO.perfil).toBe('gestor')
+  })
+})
+
+describe('sugerirDestino', () => {
+  const consultores = DADOS.usuarios.filter((u): u is UsuarioConsultor => u.perfil === 'consultor')
+  const ag = () => agregadosPorConsultor(consultores, DADOS.chamados, DADOS.historico, AGORA_MS)
+  it('Thiago Nascimento (sobrecarregado) recebe como sugestão Diego Araújo: mesmo grupo, menos ativos', () => {
+    const todos = ag()
+    const thiago = todos.find((a) => a.consultor.nome === 'Thiago Nascimento')!
+    expect(thiago.vencidos).toBeGreaterThanOrEqual(LIMITE_SOBRECARGA)
+    const s = sugerirDestino(thiago, todos)!
+    expect(s.consultor.nome).toBe('Diego Araújo')
+    expect(s.consultor.grupo_id).toBe(thiago.consultor.grupo_id)
+  })
+  it('empate em ativos desempata por mais ocioso; ninguém com menos ativos = sem sugestão', () => {
+    const a = (id: string, ativos: number, ociosoMs: number, grupo = 'g'): AgregadoConsultor => ({ consultor: { ...consultor, id, grupo_id: grupo }, ativos, vencidos: 0, vencendo4h: 0, pausados: 0, ociosoMs })
+    const origem = a('o', 30, 0)
+    expect(sugerirDestino(origem, [origem, a('x', 5, H), a('y', 5, 3 * H), a('z', 1, 0, 'outro')])!.consultor.id).toBe('y')
+    expect(sugerirDestino(origem, [origem, a('w', 30, DIA)])).toBeNull()
   })
 })

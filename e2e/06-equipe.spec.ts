@@ -30,7 +30,8 @@ test('Ricardo vê os 12 consultores, as seções da equipe e redistribui um cham
   const nomeDestino = (await primeiraOpcao.textContent())?.trim()
   await primeiraOpcao.click()
 
-  await page.getByRole('button', { name: /^Redistribuir/ }).click()
+  // os cartões sobrecarregados também têm um botão "Redistribuir"; o do painel leva a contagem
+  await page.getByRole('button', { name: /^Redistribuir \d/ }).click()
   await expect(painel).not.toBeVisible()
 
   await expect.poll(async () => ativosDoLabel(await cartaoMarina.getAttribute('aria-label'))).toBe(antes - 1)
