@@ -31,7 +31,7 @@ A sessão é por aba. Abra duas abas, entre como Marina numa e Helena na outra, 
 ## Como ver o tempo real
 
 - Duas abas: uma ação numa aba aparece na outra sem recarregar.
-- Simulador (rodapé): gera atividade de fundo. Clientes respondem, consultores pegam chamados da fila, status mudam, de vez em quando um cliente abre chamado novo. Começa ligado. O rodapé tem pausar e retomar, velocidade 1x, 5x e 20x, "Disparar evento" e "Resetar dados". Só uma aba simula por vez, e o rodapé diz se é esta ou outra.
+- Simulador (rodapé): gera atividade de fundo. Clientes respondem, consultores pegam chamados da fila, status mudam, de vez em quando um cliente abre chamado novo. Começa pausado, para a tela abrir exatamente com o `dados.json`; "Retomar simulador" no rodapé liga. O rodapé tem pausar e retomar, velocidade 1x, 5x e 20x, "Disparar evento" e "Resetar dados". Só uma aba simula por vez, e o rodapé diz se é esta ou outra.
 - "Resetar dados" apaga tudo que foi feito e volta ao `dados.json` puro. A aba que resetou recarrega sozinha. As outras abas abertas precisam ser recarregadas à mão.
 - Relógio virtual: o arquivo diz que "agora" é 03/11/2026 13:00 UTC (`meta.agora`). O app parte daí e anda em tempo real, ou mais rápido conforme a velocidade. Em 20x, um prazo de 2h estoura em 6 minutos. Com o relógio real, todos os prazos do arquivo já estariam vencidos (o último é de 06/11/2026).
 - Eventos duplicados: com o simulador ligado, cerca de 1 em 10 eventos é entregue duas vezes de propósito, porque o enunciado avisa que isso acontece. O rodapé conta quantos duplicados chegaram e foram descartados.

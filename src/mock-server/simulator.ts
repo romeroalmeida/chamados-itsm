@@ -68,7 +68,8 @@ export function criarSimulador(opts: Opcoes): Simulador {
   const base = opts.intervaloBaseMs ?? 8000
   const storage = opts.storage
   const ouvintes = new Set<(a: Acao) => void>()
-  let ligado = storage?.getItem(CHAVE_SIMULADOR) !== 'off'
+  // começa pausado: o avaliador vê exatamente o dados.json; "Retomar" no rodapé liga
+  let ligado = storage?.getItem(CHAVE_SIMULADOR) === 'on'
   let detemLock = false
   let pedindoLock = false
   let timer: ReturnType<typeof setTimeout> | null = null

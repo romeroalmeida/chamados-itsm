@@ -31,7 +31,7 @@ export function PainelSimulador() {
     // "ligado" é global (localStorage): pausar numa aba pausa a que detém o lock
     const onStorage = (ev: StorageEvent) => {
       if (ev.key !== CHAVE_SIMULADOR) return
-      const on = ev.newValue !== 'off'
+      const on = ev.newValue === 'on'
       if (on) servidor.simulador.ligar(); else servidor.simulador.desligar()
       setLigado(on)
     }
