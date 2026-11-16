@@ -87,7 +87,7 @@ export function FilaConsultorPage() {
     : <div className={s.vazio}><p>{filtro.aba === 'meus' ? 'Nenhum chamado seu com esse filtro.' : 'Fila do grupo vazia. Bom sinal.'}</p></div>
 
   return (
-    <div className={s.pagina}>
+    <div className={`${s.pagina} ${id ? s.comChamado : ''}`}>
       <section className={`${s.fila} ${id ? s.comDetalhe : ''}`} aria-label="Fila">
         <div className={s.cabeca}>
           <Tabs variante="cheio" ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Do grupo, sem dono', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => setFiltro((f) => ({ ...f, aba: v as AbaFila }))}>

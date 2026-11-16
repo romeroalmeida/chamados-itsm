@@ -3,7 +3,7 @@
 .paginaCliente { display: grid; gap: 14px; max-width: 760px; margin: 0 auto; padding: 24px 20px 48px; }
 @media (max-width: 720px) {
   .paginaCliente { padding: 16px 16px 32px; }
-  .pagina { gap: 0; padding: 0; }
+  .pagina { gap: 0; height: auto; padding: 0; }
   .pagina > nav { padding: var(--espaco-2) var(--espaco-4); background: var(--cor-superficie); border-bottom: 1px solid var(--cor-borda); }
   .detalhe { border: 0; border-radius: 0; box-shadow: none; }
 }

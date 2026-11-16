@@ -19,7 +19,7 @@
 .lt li:last-child { padding-bottom: 0; }
 .lt li:last-child::after { display: none; }
 .lt .agora::before { background: var(--cor-primaria); box-shadow: var(--anel-foco); }
-.lt time { font: 500 12.5px/1.6 var(--fonte-mono); font-variant-numeric: tabular-nums; color: var(--cor-texto-fraco); }
+.lt time { white-space: nowrap; font: 500 12.5px/1.6 var(--fonte-mono); font-variant-numeric: tabular-nums; color: var(--cor-texto-fraco); }
 .lt span { padding-left: 14px; }
 
 /* a conversa da cliente flui na página: sem fundo, sem o cabeçalho de caixa */
@@ -27,6 +27,4 @@
 .caixa > div { padding: 0; border: 0; background: none; }
 @media (max-width: 640px) {
   .cabeca { padding: 18px 16px; }
-  .lt li { grid-template-columns: 78px minmax(0, 1fr); }
-  .lt li::before { left: 85px; } .lt li::after { left: 88px; }
 }
