@@ -17,13 +17,19 @@ export function CartaoConsultor({ a, grupo, maxAtivos, sugestao, onAbrir }: Prop
   const w = (n: number) => `${((n / Math.max(1, maxAtivos)) * 100).toFixed(2)}%`
   return (
     <article className={s.cartao}>
+      {/* o selo tem linha própria: na mesma linha do nome ele disputava espaço e cobria o texto */}
       <div className={s.cabeca}>
         <span className={s.avatar} aria-hidden>{iniciais(a.consultor.nome)}</span>
-        <button type="button" className={s.quem} onClick={onAbrir} aria-label={`${a.consultor.nome}, ${a.ativos} ativos`}>
-          <strong>{a.consultor.nome}</strong><small>{grupo}</small>
-        </button>
-        {livre ? <span className={`${s.selo} ${s.seloLivre}`}><i aria-hidden />Livre</span>
-          : sobrecarregado ? <span className={`${s.selo} ${s.seloSobre}`}><i aria-hidden />Sobrecarregado</span> : null}
+        <div className={s.identidade}>
+          <button type="button" className={s.quem} onClick={onAbrir} aria-label={`${a.consultor.nome}, ${a.ativos} ativos`}>
+            <strong>{a.consultor.nome}</strong>
+          </button>
+          <span className={s.linhaGrupo}>
+            <small>{grupo}</small>
+            {livre ? <span className={`${s.selo} ${s.seloLivre}`}><i aria-hidden />Livre</span>
+              : sobrecarregado ? <span className={`${s.selo} ${s.seloSobre}`}><i aria-hidden />Sobrecarregado</span> : null}
+          </span>
+        </div>
       </div>
       <div className={s.carga} role="img" aria-label={`${a.ativos} ativos: ${a.vencidos} vencidos, ${a.vencendo4h} vencendo em 4 horas, ${a.pausados} pausados`}>
         {a.vencidos > 0 && <i className={s.cV} style={{ width: w(a.vencidos) }} />}

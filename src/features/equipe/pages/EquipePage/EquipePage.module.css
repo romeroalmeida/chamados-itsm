@@ -12,7 +12,7 @@
 .tituloSecao { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; font-size: 15px; font-weight: 650; }
 .tituloSecao small { font-size: 13px; font-weight: 500; color: var(--cor-texto-fraco); }
 .n { font-family: var(--fonte-mono); font-size: 13px; font-weight: 500; color: var(--cor-texto-fraco); }
-.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .detalhe { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--cor-borda); border-radius: var(--raio-cartao); background: var(--cor-superficie-2); scroll-margin: 16px; }
 .subtituloPainel { margin: 0; font-size: 14px; font-weight: 600; }
 .tabelas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
