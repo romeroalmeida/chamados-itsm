@@ -61,7 +61,6 @@ Versões: React 19.3, Vite 8.3, TypeScript 5.9, React Router 7.18, TanStack Quer
 - Busca full-text: a fila busca por número, título ou nome do cliente, o que basta para os volumes do arquivo.
 - Relatórios além do painel do gestor: o enunciado pede acompanhar o grupo, não relatórios.
 - Internacionalização da interface: os textos são em pt-BR. Só as datas seguem o locale e o fuso de cada usuário, porque é isso que importa para a Helena.
-- Testes e2e: ver a seção Testes.
 - Layout mobile dedicado: o layout se adapta a telas estreitas, mas o alvo é desktop.
 - Extensão do prazo pelo tempo pausado: o chamado pausado sai da conta de vencidos, mas o prazo não é empurrado.
 - Consultor abrir chamado em nome de cliente: só o cliente abre.
@@ -89,4 +88,21 @@ src/
 
     pnpm test
 
-São 116 testes em 26 arquivos, com Vitest e Testing Library. Cobrem o reducer (os quatro eventos, dedupe, primeira resposta), os handlers (eventos derivados, `409` ao pegar chamado com dono, `400` sem motivo ou fora da tabela, permissões por perfil, preenchimento de número, grupo e prazos), o socket filtrando por perfil, o bus, o log e o relógio virtual. Cobrem também as regras puras: faixas de SLA e ordenação "estoura primeiro", tabela de transições, similaridade com o par #10612/#10614 e tempo ocioso. Na tela, testam o login dos três perfis, o alerta de prazo que dispara uma vez por faixa, a conversa que não rola enquanto se digita, a sugestão de reabertura e a redistribuição. Não há testes e2e nesta entrega. É o próximo passo: um fluxo com duas abas em Playwright.
+São 116 testes em 26 arquivos, com Vitest e Testing Library. Cobrem o reducer (os quatro eventos, dedupe, primeira resposta), os handlers (eventos derivados, `409` ao pegar chamado com dono, `400` sem motivo ou fora da tabela, permissões por perfil, preenchimento de número, grupo e prazos), o socket filtrando por perfil, o bus, o log e o relógio virtual. Cobrem também as regras puras: faixas de SLA e ordenação "estoura primeiro", tabela de transições, similaridade com o par #10612/#10614 e tempo ocioso. Na tela, testam o login dos três perfis, o alerta de prazo que dispara uma vez por faixa, a conversa que não rola enquanto se digita, a sugestão de reabertura e a redistribuição.
+
+### E2E (Playwright)
+
+    pnpm exec playwright install chromium   # uma vez
+    pnpm test:e2e
+
+Sobe o app numa porta própria (5180, `playwright.config.ts`) para não colidir com um `pnpm dev` já rodando em 5173, e roda no Chromium. Cada teste começa com um contexto limpo (localStorage e sessionStorage zerados), então reaplica o `dados.json` puro.
+
+Cobre os seis requisitos do enunciado, um por arquivo em `e2e/`, mais o tempo real entre abas:
+
+1. `01-abrir-chamado.spec.ts` – Helena abre um chamado, cai no detalhe, ele aparece em "Meus chamados"; e digitar o título do #10614 sugere reabrir o #10612.
+2. `02-encontrar-e-ver.spec.ts` – Marina busca por número na fila, abre o chamado e vê conversa, status, responsável e prazo; a trilha volta em `/chamados/:id`.
+3. `03-pegar-chamado.spec.ts` – Marina pega um chamado da aba "Do grupo, sem dono" e ele passa para "Meus", em atendimento.
+4. `04-trocar-mensagens.spec.ts` – Marina responde e deixa uma nota interna; a nota tem o rótulo "só a equipe vê" para Marina e não aparece para a cliente, logada em outra aba.
+5. `05-status-motivo-reabrir.spec.ts` – Marina marca um chamado como resolvido (o diálogo exige motivo); Helena reabre um chamado fechado contando o que aconteceu.
+6. `06-equipe.spec.ts` – Ricardo vê os 12 cartões de consultor, "Vencendo nas próximas 4 horas" e "Fila sem dono", e redistribui um chamado entre consultores.
+7. `07-tempo-real.spec.ts` – duas abas do mesmo contexto (mesmo localStorage, sessionStorage separado): mensagem enviada por Helena aparece na tela da Marina sem recarregar.
