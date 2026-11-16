@@ -97,6 +97,32 @@ describe('GET /chamados e /chamados/:id', () => {
   })
 })
 
+describe('GET /mensagens/ultimas', () => {
+  type Ultima = { chamado_id: string; autor_id: string; criada_em: string }
+  it('uma entrada por chamado visível, com a última mensagem não interna', async () => {
+    const r: Ultima[] = await (await get('/mensagens/ultimas', MARINA)).json()
+    const doGrupo = new Set(DADOS.chamados.filter((c) => c.grupo_id === grupoMarina).map((c) => c.id))
+    expect(r.length).toBeGreaterThan(0)
+    expect(r.every((u) => doGrupo.has(u.chamado_id))).toBe(true)
+    const c10611 = DADOS.chamados.find((c) => c.numero === 10611)!
+    const esperada = DADOS.mensagens.filter((m) => m.chamado_id === c10611.id && m.interna !== true).sort((a, b) => a.criada_em.localeCompare(b.criada_em)).at(-1)!
+    expect(r.find((u) => u.chamado_id === c10611.id)).toEqual({ chamado_id: c10611.id, autor_id: esperada.autor_id, criada_em: esperada.criada_em })
+  })
+  it('nota interna nova não muda a última; resposta ao cliente muda', async () => {
+    const c = Object.values(db.estado().chamados).find((x) => x.responsavel_id === MARINA.id && x.status === 'em_atendimento')!
+    const antes = ((await (await get('/mensagens/ultimas', MARINA)).json()) as Ultima[]).find((u) => u.chamado_id === c.id)
+    await post(`/chamados/${c.id}/mensagens`, { texto: 'só para a equipe', interna: true }, MARINA)
+    expect(((await (await get('/mensagens/ultimas', MARINA)).json()) as Ultima[]).find((u) => u.chamado_id === c.id)).toEqual(antes)
+    await post(`/chamados/${c.id}/mensagens`, { texto: 'olá', interna: false }, MARINA)
+    expect(((await (await get('/mensagens/ultimas', MARINA)).json()) as Ultima[]).find((u) => u.chamado_id === c.id)!.autor_id).toBe(MARINA.id)
+  })
+  it('cliente só recebe os próprios chamados', async () => {
+    const r: Ultima[] = await (await get('/mensagens/ultimas', HELENA)).json()
+    const dela = new Set(DADOS.chamados.filter((c) => c.solicitante_id === HELENA.id).map((c) => c.id))
+    expect(r.every((u) => dela.has(u.chamado_id))).toBe(true)
+  })
+})
+
 describe('POST /chamados', () => {
   it('cliente abre; servidor preenche número, grupo, prazos; emite chamado.aberto', async () => {
     const cat = DADOS.categorias.find((c) => c.nome === 'Rede e VPN')!

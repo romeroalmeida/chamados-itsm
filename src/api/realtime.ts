@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
-import type { Chamado, Evento, Historico, Usuario } from '@/shared/types'
+import type { Chamado, Evento, Historico, UltimaMensagem, Usuario } from '@/shared/types'
 import { chamadoIdDe } from '@/shared/types'
 import { aplicar, estadoVazio, type Estado } from '@/shared/utils/reducer'
 import type { Socket } from '@/mock-server/socket'
@@ -46,11 +46,23 @@ export function criarRealtime(qc: QueryClient, socket: Socket): Realtime {
     if (qc.getQueryData(chaves.historico) !== undefined) qc.setQueryData<Historico[]>(chaves.historico, espelho.historico)
   }
 
+  const projetarUltima = (e: Evento) => {
+    if (e.tipo !== 'mensagem.adicionada' || e.payload.interna === true) return
+    const { chamado_id, autor_id, criada_em } = e.payload
+    qc.setQueryData<UltimaMensagem[]>(chaves.ultimasMensagens, (lista) => {
+      if (!lista) return lista // não carregado: o GET traz tudo quando a fila abrir
+      const atual = lista.find((u) => u.chamado_id === chamado_id)
+      if (atual && atual.criada_em > criada_em) return lista
+      return [...lista.filter((u) => u.chamado_id !== chamado_id), { chamado_id, autor_id, criada_em }]
+    })
+  }
+
   const sair = socket.assinar((e) => {
     const antes = espelho
     espelho = aplicar(espelho, e)
     if (espelho === antes) return // duplicado
     projetar(chamadoIdDe(e))
+    projetarUltima(e)
     for (const cb of ouvintes) cb(e)
   })
 

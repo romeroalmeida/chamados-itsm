@@ -63,6 +63,20 @@ describe('realtime', () => {
     rt.parar()
   })
 
+  it('mensagem não interna atualiza a última mensagem do chamado; nota interna não', () => {
+    const qc = new QueryClient()
+    const { socket, emitir } = socketFake()
+    const rt = criarRealtime(qc, socket)
+    const c = DADOS.chamados.find((x) => x.status === 'em_atendimento')!
+    qc.setQueryData(chaves.ultimasMensagens, [{ chamado_id: c.id, autor_id: 'equipe', criada_em: '2026-11-01T00:00:00Z' }])
+    const msg = (id: string, interna: boolean): Evento => ({ id, tipo: 'mensagem.adicionada', ocorrido_em: T, payload: { id, chamado_id: c.id, criada_em: T, autor_id: c.solicitante_id, texto: 'oi', interna } })
+    emitir(msg('int', true))
+    expect(qc.getQueryData(chaves.ultimasMensagens)).toEqual([{ chamado_id: c.id, autor_id: 'equipe', criada_em: '2026-11-01T00:00:00Z' }])
+    emitir(msg('pub', false))
+    expect(qc.getQueryData(chaves.ultimasMensagens)).toEqual([{ chamado_id: c.id, autor_id: c.solicitante_id, criada_em: T }])
+    rt.parar()
+  })
+
   it('evento de chamado ainda não carregado é no-op, exceto chamado.aberto', () => {
     const qc = new QueryClient()
     const { socket, emitir } = socketFake()

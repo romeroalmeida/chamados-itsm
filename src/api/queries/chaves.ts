@@ -2,6 +2,7 @@ export const chaves = {
   chamados: ['chamados'] as const,
   chamado: (id: string) => ['chamado', id] as const,
   historico: ['historico'] as const,
+  ultimasMensagens: ['ultimas-mensagens'] as const,
   usuarios: ['usuarios'] as const,
   categorias: ['categorias'] as const,
   grupos: ['grupos'] as const,

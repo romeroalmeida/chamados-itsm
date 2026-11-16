@@ -10,6 +10,14 @@
   --cor-primaria: #4f46e5;
   --cor-primaria-texto: #ffffff;
   --cor-primaria-suave: #eef0ff;
+  --cor-primaria-hover: #4338ca;
+  --cor-primaria-escuro: #3730a3;
+  --cor-anil-texto: #312e81;       /* texto sobre fundo primária suave */
+  --anel-foco: 0 0 0 4px rgb(79 70 229 / 14%);
+  /* campo no padrão do login: fundo cinza suave, raio 14, borda índigo + anel no foco */
+  --cor-campo: #f2f3f8;
+  --cor-campo-hover: #eceef5;
+  --raio-campo: 14px;
   --cor-selecao: #eef0ff;
   --cor-interna: #fffbeb;          /* fundo de nota interna */
   --cor-interna-borda: #fcd34d;

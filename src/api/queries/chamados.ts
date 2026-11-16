@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Chamado, Historico, Mensagem, Status } from '@/shared/types'
+import type { Chamado, Historico, Mensagem, Status, UltimaMensagem } from '@/shared/types'
 import { api } from '../apiClient'
 import { chaves } from './chaves'
 import { hidratar } from '../realtime'
@@ -14,6 +14,10 @@ export function useChamado(id: string | undefined) {
 }
 export function useHistorico(habilitado: boolean) {
   return useQuery({ queryKey: chaves.historico, enabled: habilitado, queryFn: async () => { const d = await api.get<Historico[]>('/historico'); hidratar.historico(d); return d } })
+}
+/** Quem falou por último com o cliente, por chamado. Eventos de mensagem atualizam o cache em realtime.ts. */
+export function useUltimasMensagens() {
+  return useQuery({ queryKey: chaves.ultimasMensagens, queryFn: () => api.get<UltimaMensagem[]>('/mensagens/ultimas') })
 }
 
 /** As mutations não mexem no cache: a tela muda quando o evento chega (spec §4.3). */

@@ -51,6 +51,9 @@ export interface Mensagem {
   interna: boolean | null
 }
 
+/** Resumo da última mensagem que o cliente vê (não interna) de um chamado: GET /mensagens/ultimas. */
+export interface UltimaMensagem { chamado_id: string; autor_id: string; criada_em: string }
+
 export interface Historico {
   id: string
   chamado_id: string

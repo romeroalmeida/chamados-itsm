@@ -1,5 +1,5 @@
 import { http, HttpResponse, type HttpHandler } from 'msw'
-import type { Chamado, Evento, Mensagem, Prioridade, Status, Usuario } from '@/shared/types'
+import type { Chamado, Evento, Mensagem, Prioridade, Status, UltimaMensagem, Usuario } from '@/shared/types'
 import { calcularPrazos } from '@/shared/utils/sla'
 import { MOTIVO_CLIENTE_RESPONDEU, MOTIVO_PEGOU, motivoAtribuidoPor, motivoAutomatico, transicaoValida } from '@/shared/utils/status'
 import { historicoParaPerfil, mensagemVisivel, visivelPara } from '@/shared/utils/visibilidade'
@@ -91,6 +91,19 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
       if (u.perfil === 'cliente') throw erro('sem_permissao', 'Histórico consolidado é só da equipe')
       const s = db.estado()
       return HttpResponse.json(s.historico.filter((h) => { const c = s.chamados[h.chamado_id]; return c && visivelPara(u, c) }))
+    })),
+
+    // A lista de chamados não traz mensagens; a fila precisa saber só quem falou por último com o cliente ("respondeu").
+    http.get(`${BASE}/mensagens/ultimas`, tentar((req) => {
+      const u = usuarioDa(req)
+      const s = db.estado()
+      const r: UltimaMensagem[] = []
+      for (const c of Object.values(s.chamados)) {
+        if (!visivelPara(u, c)) continue
+        const ultima = (s.mensagens[c.id] ?? []).findLast((m) => m.interna !== true) // lista em ordem cronológica
+        if (ultima) r.push({ chamado_id: c.id, autor_id: ultima.autor_id, criada_em: ultima.criada_em })
+      }
+      return HttpResponse.json(r)
     })),
 
     http.post(`${BASE}/chamados`, tentar(async (req) => {
