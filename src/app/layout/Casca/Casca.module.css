@@ -1,4 +1,6 @@
 /* flex em coluna: a faixa offline é opcional e não pode roubar a linha 1fr do conteúdo */
 .casca { display: flex; flex-direction: column; height: 100%; }
-.conteudo { flex: 1; min-height: 0; overflow: auto; }
+/* position: relative prende os elementos absolutos (textos só para leitor de tela) dentro da área rolável;
+   sem isso eles esticavam a página e criavam uma segunda barra de rolagem */
+.conteudo { position: relative; flex: 1; min-height: 0; overflow: auto; }
 .faixaOffline { background: var(--sla-atencao-suave); color: var(--cor-interna-texto); padding: 6px 16px; font-size: 13px; border-bottom: 1px solid var(--cor-interna-borda); }
