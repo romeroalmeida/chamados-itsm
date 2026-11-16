@@ -5,8 +5,9 @@ export interface Opcao { valor: string; rotulo: string }
 interface Props { valor: string | undefined; onChange: (v: string) => void; opcoes: Opcao[]; placeholder?: string; ariaLabel: string; className?: string }
 
 export function Select({ valor, onChange, opcoes, placeholder = 'Selecione', ariaLabel, className }: Props) {
+  // sempre controlado: '' mostra o placeholder (Radix 2); undefined faria o Select alternar entre não controlado e controlado
   return (
-    <RS.Root value={valor} onValueChange={onChange}>
+    <RS.Root value={valor ?? ''} onValueChange={onChange}>
       <RS.Trigger className={`${s.trigger} ${className ?? ''}`} aria-label={ariaLabel}>
         <RS.Value placeholder={placeholder} />
         <RS.Icon className={s.icone}><svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></RS.Icon>
