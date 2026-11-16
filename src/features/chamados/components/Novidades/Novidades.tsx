@@ -1,33 +1,39 @@
-import type { Chamado, Usuario } from '@/shared/types'
+import type { Usuario } from '@/shared/types'
 import { Button } from '@/shared/components'
 import { useUltimaVisita } from '@/shared/hooks/useUltimaVisita'
-import { rotuloStatus } from '../../utils/rotulos'
+import { formatarDataHora } from '@/shared/utils/datas'
+import { novidadesDesde, type DetalheCliente } from '../../utils/cliente'
 import s from './Novidades.module.css'
 
-interface Props { chamados: Chamado[]; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; onAbrir: (id: string) => void }
+interface Props { itens: DetalheCliente[]; usuario: Usuario; nomes: Record<string, string>; agora: number; onAbrir: (id: string) => void }
 
-/** Spec §5.3: o que mudou desde a última visita. A LoginPage grava a primeira visita (spec §5.0); sem registro, nada. */
-export function Novidades({ chamados, usuario, usuarios, agora, onAbrir }: Props) {
+/** Spec §5.3, em frases e no fuso da cliente. A LoginPage grava a primeira visita (spec §5.0); sem registro, nada. */
+export function Novidades({ itens, usuario, nomes, agora, onAbrir }: Props) {
   const [ultima, marcar] = useUltimaVisita(usuario.id)
   if (ultima === null) return null
-  const mudaram = chamados.filter((c) => Date.parse(c.atualizado_em) > ultima).sort((a, b) => b.atualizado_em.localeCompare(a.atualizado_em))
-  if (mudaram.length === 0) return null
+  const novidades = novidadesDesde(itens, ultima, usuario.id, agora, nomes)
+  if (novidades.length === 0) return null
   return (
-    <section aria-label="Novidades" className={s.painel}>
+    <section aria-labelledby="t-novidades" className={s.painel}>
       <div className={s.topo}>
-        <strong className={s.titulo}>Novidades desde sua última visita</strong>
-        <Button pequeno onClick={() => marcar(agora)}>Entendi</Button>
+        <h2 id="t-novidades" className={s.titulo}>Desde a sua última visita</h2>
+        <span className={s.visita}>visita em {formatarDataHora(new Date(ultima).toISOString(), usuario)}</span>
+        <Button pequeno className={s.entendi} onClick={() => marcar(agora)}>Entendi</Button>
       </div>
       <ul className={s.lista}>
-        {mudaram.map((c) => {
-          const resp = c.responsavel_id ? usuarios[c.responsavel_id]?.nome : undefined
-          // spec §5.3: "Rafael respondeu", "Resolvido, confirme". A lista só tem o chamado, não a mensagem; o texto deriva do status.
-          const novidade = c.status === 'resolvido' ? 'resolvido, confirme'
-            : c.status === 'aguardando_cliente' ? `${resp ?? 'a equipe'} respondeu e aguarda você`
-            : c.status === 'em_atendimento' ? `${resp ?? 'a equipe'} atualizou`
-            : c.status === 'fechado' ? 'fechado' : rotuloStatus(c, 'cliente', resp)
-          return <li key={c.id}><button type="button" className={s.link} onClick={() => onAbrir(c.id)}><span className={s.numero}>#{c.numero}</span> {c.titulo}</button><span className={s.novidade}>{novidade}</span></li>
-        })}
+        {novidades.map((n) => (
+          <li key={n.id}>
+            <span className={`${s.icone} ${n.alerta ? s.alerta : ''}`} aria-hidden>
+              {n.alerta
+                ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>}
+            </span>
+            <span className={s.frase}>{n.texto}</span>
+            <button type="button" className={s.link} onClick={() => onAbrir(n.chamado.id)}>
+              <span className={s.mono}>#{n.chamado.numero}</span> {n.chamado.titulo} · <span className={s.mono}>{formatarDataHora(n.em, usuario)}</span>
+            </button>
+          </li>
+        ))}
       </ul>
     </section>
   )

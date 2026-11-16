@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Chamado, Historico, Mensagem, Status, UltimaMensagem } from '@/shared/types'
 import { api } from '../apiClient'
 import { chaves } from './chaves'
@@ -9,8 +9,14 @@ export interface DetalheChamado { chamado: Chamado; mensagens: Mensagem[]; histo
 export function useChamados() {
   return useQuery({ queryKey: chaves.chamados, queryFn: async () => { const d = await api.get<Chamado[]>('/chamados'); hidratar.chamados(d); return d } })
 }
+const buscarDetalhe = async (id: string) => { const d = await api.get<DetalheChamado>(`/chamados/${id}`); hidratar.detalhe(d); return d }
 export function useChamado(id: string | undefined) {
-  return useQuery({ queryKey: chaves.chamado(id ?? ''), enabled: !!id, queryFn: async () => { const d = await api.get<DetalheChamado>(`/chamados/${id}`); hidratar.detalhe(d); return d } })
+  return useQuery({ queryKey: chaves.chamado(id ?? ''), enabled: !!id, queryFn: () => buscarDetalhe(id!) })
+}
+/** Vários detalhes no mesmo cache do useChamado (os eventos chegam neles pelo realtime).
+ * shortcut: um GET por chamado, ok para a cliente (poucos chamados); para listas grandes, um endpoint agregado. */
+export function useDetalhes(ids: string[]) {
+  return useQueries({ queries: ids.map((id) => ({ queryKey: chaves.chamado(id), queryFn: () => buscarDetalhe(id) })) })
 }
 export function useHistorico(habilitado: boolean) {
   return useQuery({ queryKey: chaves.historico, enabled: habilitado, queryFn: async () => { const d = await api.get<Historico[]>('/historico'); hidratar.historico(d); return d } })
