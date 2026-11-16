@@ -29,10 +29,27 @@ describe('NovoChamadoPage', () => {
         </MemoryRouter>
       </ToastProvider></QueryClientProvider>,
     )
-    await userEvent.type(await screen.findByLabelText(/título/i), chamadoPorNumero(10614).titulo)
+    await userEvent.type(await screen.findByLabelText(/em uma frase/i), chamadoPorNumero(10614).titulo)
     // o número fica dentro de <strong>: matcher por texto não cruza elementos
-    expect(await screen.findByRole('status')).toHaveTextContent(/parece com seu chamado #10612/i)
+    expect(await screen.findByRole('status')).toHaveTextContent(/parece com o seu chamado #10612/i)
     await userEvent.click(screen.getByRole('button', { name: /reabrir/i }))
     expect(await screen.findByText('detalhe')).toBeInTheDocument()
+  })
+
+  it('enviar vazio mostra o erro de cada campo e não chama a API', async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}><ToastProvider>
+        <MemoryRouter initialEntries={['/meus-chamados/novo']}><Routes><Route path="/meus-chamados/novo" element={<NovoChamadoPage />} /></Routes></MemoryRouter>
+      </ToastProvider></QueryClientProvider>,
+    )
+    await screen.findByRole('radio', { name: 'Internet, rede ou VPN' })
+    await userEvent.click(screen.getByRole('button', { name: /abrir chamado/i }))
+    expect(screen.getByText('Escolha o que parou, mesmo que seja só aproximado.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/em uma frase/i)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Detalhes')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByRole('radio', { name: 'Não consigo entrar (acesso ou senha)' })).toHaveFocus()
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+    await userEvent.click(screen.getByRole('radio', { name: 'Internet, rede ou VPN' }))
+    expect(screen.queryByText('Escolha o que parou, mesmo que seja só aproximado.')).not.toBeInTheDocument()
   })
 })
