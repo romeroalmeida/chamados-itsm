@@ -211,3 +211,43 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 **Por quê.** As regras que mais quebram (reducer, handlers, SLA, transições, visibilidade, ocioso) são funções puras e foram testadas sem tela. O e2e com duas abas é o próximo passo, anotado no README.
 
 **Onde no código.** Arquivos `*.test.ts` e `*.test.tsx` ao lado do código, `src/tests/`.
+
+## Fila agrupada por urgência, sem virtualização
+
+**Decisão.** A fila da consultora é agrupada em Vencidos, Próxima hora (até 1h), Hoje (mais de 1h e prazo relevante até 23:59 do dia no fuso do consultor), Depois, Pausados e Encerrados, com cabeçalho fixo por grupo. A ordem dentro de cada grupo é a do filtro escolhido. A lista não é mais virtualizada.
+
+**Alternativas.** Manter a lista plana com a faixa de alerta no topo. Agrupar dentro da lista virtualizada.
+
+**Por quê.** A dor da Marina é perder tempo procurando o que vai estourar; o grupo diz em que trecho da fila ela está mesmo depois de rolar, e os contadores do topo levam ao grupo. A fila de um consultor tem dezenas de chamados (42 da Marina, 35 sem dono no grupo), o que o navegador renderiza sem esforço, e cabeçalho fixo dentro de lista virtualizada é frágil. A conversa de 1.500 mensagens continua virtualizada. O limite de "Hoje" usa o fim do dia no fuso do usuário; o cálculo ignora troca de horário de verão, que não existe em America/Sao_Paulo desde 2019.
+
+**Onde no código.** `src/features/chamados/utils/fila.ts` (`agruparPorUrgencia`, `fimDoDia`), `src/features/chamados/components/ListaChamados/ListaChamados.tsx`.
+
+## Selo "respondeu" com GET /mensagens/ultimas
+
+**Decisão.** `GET /mensagens/ultimas` devolve, para cada chamado visível, autor e data da última mensagem que o cliente vê (não interna). A fila marca "respondeu" quando esse autor é o próprio cliente. Cada `mensagem.adicionada` não interna atualiza esse cache no `realtime.ts`.
+
+**Alternativas.** Buscar o detalhe de cada chamado da fila. Deduzir de `atualizado_em`.
+
+**Por quê.** `GET /chamados` não traz mensagens, e um GET por chamado seria uma requisição por linha. `atualizado_em` muda também com status e atribuição, então não diz quem falou por último. O resumo é pequeno e segue a mesma regra de visibilidade das outras rotas.
+
+**Onde no código.** `src/mock-server/handlers.ts`, `src/api/queries/chamados.ts` (`useUltimasMensagens`), `src/api/realtime.ts` (`projetarUltima`), `src/features/chamados/utils/fila.ts` (`clienteRespondeu`).
+
+## Próximo passo e novidades da cliente a partir do detalhe
+
+**Decisão.** A tela "Meus chamados" carrega o detalhe de cada chamado da cliente (um GET por chamado, no mesmo cache do detalhe) e deriva dele o próximo passo de cada cartão e as frases de "Desde a sua última visita". A última visita é a que já fica gravada em `localStorage`.
+
+**Alternativas.** Um endpoint agregado para a cliente. Frases derivadas só do status.
+
+**Por quê.** A cliente tem poucos chamados, então poucas requisições. O detalhe já chega filtrado para ela (sem nota interna, histórico sem motivo) e recebe os eventos em tempo real. Só do status não dá para dizer "Juliana pediu mais informações em 01/11" nem "você já respondeu depois disso".
+
+**Onde no código.** `src/features/chamados/utils/cliente.ts`, `src/api/queries/chamados.ts` (`useDetalhes`), `src/features/chamados/pages/MeusChamadosPage/MeusChamadosPage.tsx`.
+
+## Sugestão de redistribuição
+
+**Decisão.** No cartão de quem tem 15 vencidos ou mais, o painel sugere um destino: mesmo grupo, menos chamados ativos, desempate por mais tempo ocioso na semana, e só quem tem menos ativos que a origem. É uma sugestão escrita no cartão; nada é pré-selecionado nem atribuído.
+
+**Alternativas.** Redistribuição automática. Nenhuma sugestão.
+
+**Por quê.** O gestor decide; a sugestão poupa a comparação manual entre cartões. Os critérios usam só números que o cartão já mostra.
+
+**Onde no código.** `src/shared/utils/equipe.ts` (`sugerirDestino`, `LIMITE_SOBRECARGA`), `src/features/equipe/components/CartaoConsultor.tsx`.
