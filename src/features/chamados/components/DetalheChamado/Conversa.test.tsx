@@ -30,4 +30,17 @@ describe('Conversa', () => {
     render(<Conversa mensagens={[msg('1', true)]} usuarios={usuarios} usuario={MARINA} digitando={false} />)
     expect(screen.getByText(/só a equipe vê/i)).toBeInTheDocument()
   })
+
+  it('mudanças de status entram na linha do tempo entre as mensagens', () => {
+    const h = { id: 'h1', chamado_id: 'c', tipo: 'status' as const, de: 'em_atendimento' as const, para: 'resolvido' as const, usuario_id: MARINA.id, motivo: 'Correção aplicada', ocorrido_em: '2026-11-03T12:00:00Z' }
+    render(<Conversa mensagens={[msg('1')]} historico={[h]} usuarios={usuarios} usuario={MARINA} digitando={false} />)
+    expect(screen.getByText(/Você mudou para resolvido · “Correção aplicada”/)).toBeInTheDocument()
+  })
+
+  it('cliente vê só as últimas mensagens até pedir as anteriores', async () => {
+    render(<Conversa mensagens={[msg('1'), msg('2'), msg('3')]} usuarios={usuarios} usuario={HELENA} digitando={false} recolher={1} />)
+    expect(screen.queryByText('texto 1')).not.toBeInTheDocument()
+    screen.getByRole('button', { name: 'Mostrar as 2 mensagens anteriores' }).click()
+    expect(await screen.findByText('texto 1')).toBeInTheDocument()
+  })
 })

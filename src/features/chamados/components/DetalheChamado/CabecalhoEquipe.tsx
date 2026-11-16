@@ -1,0 +1,72 @@
+import type { ReactNode } from 'react'
+import type { Chamado, Mensagem, Usuario } from '@/shared/types'
+import { formatarDataHora, formatarDuracao } from '@/shared/utils/datas'
+import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
+import { Passos, PASSOS_EQUIPE } from './Passos'
+import s from './detalhe.module.css'
+
+interface Props { chamado: Chamado; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; reabertoEm?: string; categoria?: string; ultimaDoCliente?: Mensagem; acoes: ReactNode }
+
+const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
+/** Cabeçalho do chamado para a equipe: título e ações, meta, stepper de status, faixa de prazo e dica de contexto. */
+export function CabecalhoEquipe({ chamado, usuario, usuarios, agora, reabertoEm, categoria, ultimaDoCliente, acoes }: Props) {
+  const responsavel = chamado.responsavel_id ? usuarios[chamado.responsavel_id] : undefined
+  const solicitante = usuarios[chamado.solicitante_id]
+  return (
+    <header className={s.cabecalho}>
+      <div className={s.linhaTitulo}>
+        <div className={s.tituloBloco}>
+          <span className={s.numero}>#{chamado.numero}</span>
+          <h1 className={s.titulo}>{chamado.titulo}</h1>
+        </div>
+        {acoes}
+      </div>
+      <div className={s.meta}>
+        <span>Cliente <b>{solicitante?.nome}</b>{solicitante?.perfil === 'cliente' && ` · ${solicitante.empresa}`}</span>
+        {categoria && <span>{categoria} · prioridade {chamado.prioridade}</span>}
+        <span>Aberto em <b className={s.mono}>{formatarDataHora(chamado.aberto_em, usuario)}</b></span>
+        <span>Responsável <b>{responsavel?.nome ?? 'sem dono'}</b></span>
+      </div>
+      <Passos passos={PASSOS_EQUIPE} status={chamado.status} nota={reabertoEm ? `reaberto ${formatarDataHora(reabertoEm, usuario)}` : undefined} />
+      <FaixaPrazo chamado={chamado} usuario={usuario} agora={agora} />
+      {ultimaDoCliente && faixaSla(chamado, agora) !== 'encerrado' && (
+        <div className={s.dica}>
+          <IconeConversa />
+          <span>{solicitante?.nome.split(' ')[0] ?? 'O cliente'} respondeu por último: <q>{ultimaDoCliente.texto.length > 140 ? `${ultimaDoCliente.texto.slice(0, 140)}…` : ultimaDoCliente.texto}</q> <span className={s.mono}>({formatarDataHora(ultimaDoCliente.criada_em, usuario)})</span></span>
+        </div>
+      )}
+    </header>
+  )
+}
+
+function FaixaPrazo({ chamado, usuario, agora }: { chamado: Chamado; usuario: Usuario; agora: number }) {
+  const faixa = faixaSla(chamado, agora)
+  if (faixa === 'encerrado') return null
+  const { tipo, prazo } = prazoRelevante(chamado)
+  const quando = formatarDataHora(prazo, usuario)
+  if (faixa === 'pausado') {
+    return (
+      <div className={`${s.faixaPrazo} ${s.pausado}`} role="status">
+        <IconePrazo /><strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>Prazo pausado enquanto aguarda o cliente</strong>
+        <span>{TIPO_PRAZO[tipo]} até <span className={s.mono}>{quando}</span>, sem extensão pela pausa</span>
+      </div>
+    )
+  }
+  const restante = restanteMs(chamado, agora)
+  // a 1ª resposta já saiu: se saiu depois do prazo dela, vale dizer, porque explica o atraso acumulado
+  const primeiraAtrasada = tipo === 'resolucao' && chamado.primeira_resposta_em !== null && chamado.primeira_resposta_em > chamado.prazo_primeira_resposta
+  return (
+    <div className={`${s.faixaPrazo} ${s[faixa]}`} role="status">
+      <IconePrazo />
+      <strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>{maiuscula(TIPO_PRAZO[tipo])} {restante < 0 ? `venceu há ${formatarDuracao(-restante)}` : `vence em ${formatarDuracao(restante)}`}</strong>
+      <span>
+        {restante < 0 ? 'prazo era ' : 'prazo '}<span className={s.mono}>{quando}</span>
+        {primeiraAtrasada && <> · 1ª resposta também saiu atrasada (<span className={s.mono}>{formatarDataHora(chamado.primeira_resposta_em!, usuario)}</span>)</>}
+      </span>
+    </div>
+  )
+}
+
+const IconePrazo = () => <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10 2h4" /><path d="m12 14 3-3" /><circle cx="12" cy="14" r="8" /></svg>
+export const IconeConversa = () => <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>

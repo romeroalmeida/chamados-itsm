@@ -64,7 +64,7 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
     <div className={s.acoes}>
       {podePegar && <Button variante="primaria" onClick={() => atribuir.mutate({ chamadoId: chamado.id, consultorId: usuario.id }, { onError: erro })} disabled={atribuir.isPending}>Pegar para atender</Button>}
       {podeAtribuir && <Button onClick={() => setAtribuindo(true)}>{semDono ? 'Atribuir a…' : 'Reatribuir a…'}</Button>}
-      {transicoes.map((para) => <Button key={para} onClick={() => executar(para)} disabled={mudar.isPending}>{rotulo(para)}</Button>)}
+      {transicoes.map((para) => <Button key={para} variante={para === 'resolvido' ? 'primaria' : 'padrao'} onClick={() => executar(para)} disabled={mudar.isPending}>{rotulo(para)}</Button>)}
 
       <Dialog aberto={alvo !== null} onFechar={() => setAlvo(null)} titulo={alvo && ehReabertura(chamado.status, alvo) ? 'Reabrir chamado' : 'Mudar status'}
         acoes={<><Button onClick={() => setAlvo(null)}>Cancelar</Button><Button variante="primaria" onClick={confirmar} disabled={!motivo.trim() || mudar.isPending}>Confirmar</Button></>}>
