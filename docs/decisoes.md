@@ -126,11 +126,11 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Decisão.** As transições de status permitidas vivem numa tabela, por perfil. Fora da tabela, a ação não aparece na tela, e se chegar ao servidor dá `400`. Motivo vazio em transição manual também dá `400`. Motivos automáticos são preenchidos pelo servidor ("Assumido para atendimento", "Atribuído por {gestor}", "Cliente respondeu", "Confirmado pelo cliente").
 
-Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motivo em texto livre: oferece como chips as strings de motivo que já aparecem em `historico.motivo` para aquela transição em `dados.json`, mais a opção "Outro motivo" com campo de texto. Com uma única sugestão, ela já vem pré-selecionada (um clique no "Marcar como resolvido" e já pode confirmar). Sem nenhuma sugestão (`aguardando_cliente → em_atendimento`), só existe "Outro motivo". O motivo continua obrigatório: "Confirmar" só habilita com uma opção escolhida (e texto não vazio, se for "Outro"). Para a cliente (Helena), o campo continua texto livre ("Conte o que aconteceu"), snuma lista suspensa.
+Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motivo em texto livre: oferece numa lista suspensa as strings de motivo que já aparecem em `historico.motivo` para aquela transição em `dados.json`, mais a opção "Outro motivo" com campo de texto. Com uma única sugestão, ela já vem pré-selecionada (um clique no "Marcar como resolvido" e já pode confirmar). Sem nenhuma sugestão (`aguardando_cliente → em_atendimento`), só existe "Outro motivo". O motivo continua obrigatório: "Confirmar" só habilita com uma opção escolhida (e texto não vazio, se for "Outro"). Para a cliente (Helena), o campo continua texto livre ("Conte o que aconteceu").
 
 **Alternativas.** Regras espalhadas pelos componentes. Validação só na tela. Texto livre também para a equipe.
 
-**Por quê.** Uma tabela só é lida pela tela e pelo servidor, então os dois não divergem. A tela esconde o que o servidor bloquearia, mas quem decide é o servidor. `aberto → em_atendimento` não está na tabela: só acontece ao pegar ou atribuir. Os motivos digitados pela equipe no arquivo original já seguem um vocabulário fixo por transição; chips evitam variações de redação do mesmo motivo e tornam o registro mais rápido, sem abrir mão do texto livre para o caso que o arquivo não cobre.
+**Por quê.** Uma tabela só é lida pela tela e pelo servidor, então os dois não divergem. A tela esconde o que o servidor bloquearia, mas quem decide é o servidor. `aberto → em_atendimento` não está na tabela: só acontece ao pegar ou atribuir. Os motivos digitados pela equipe no arquivo original já seguem um vocabulário fixo por transição; a lista evita variações de redação do mesmo motivo e tornam o registro mais rápido, sem abrir mão do texto livre para o caso que o arquivo não cobre.
 
 **Onde no código.** `src/shared/utils/status.ts` (`MOTIVOS_SUGERIDOS`, `motivosSugeridos`), `src/mock-server/handlers.ts`, `src/features/chamados/components/DetalheChamado/AcoesStatus.tsx`.
 
@@ -280,8 +280,8 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 | Grupo (coluna da tabela do gestor) | igual | `grupo_id`, entidade `grupos` |
 | Número, título ou cliente (busca) | igual | `numero`, `titulo`, `solicitante_id` |
 | Motivo (diálogo de status) | igual | `historico.motivo`; enunciado: "mudar o status registrando o motivo" |
-| Aguardando retorno do cliente, Aguardando validação, Solicitadas informações adicionais (chips de "Em atendimento → Aguardando cliente") | igual | `historico.motivo` do `dados.json` |
-| Correção aplicada, Problema não reproduzido, Resolvido com workaround (chips de "Em atendimento → Resolvido") | igual | `historico.motivo` do `dados.json` |
+| Aguardando retorno do cliente, Aguardando validação, Solicitadas informações adicionais (opções de "Em atendimento → Aguardando cliente") | igual | `historico.motivo` do `dados.json` |
+| Correção aplicada, Problema não reproduzido, Resolvido com workaround (opções de "Em atendimento → Resolvido") | igual | `historico.motivo` do `dados.json` |
 | Fechado após confirmação do cliente (chip de "Resolvido → Fechado", pela equipe) | igual | `historico.motivo` do `dados.json` |
 | Reaberto a pedido do cliente (chip de "Resolvido/Fechado → Em atendimento") | igual | `historico.motivo` do `dados.json` |
 | Outro motivo (chip do diálogo de status, equipe) | — | sem equivalente no arquivo; cobre transição sem motivo registrado e qualquer motivo fora da lista |
