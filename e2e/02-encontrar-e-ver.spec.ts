@@ -10,7 +10,7 @@ test('Marina busca por número, abre o chamado e vê conversa, status, responsá
 
   await expect(page).toHaveURL(/\/fila\/[\w-]+$/)
   await expect(page.getByLabel('Conversa', { exact: true })).toBeVisible()
-  await expect(page.getByText('Em atendimento', { exact: true })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Status' }).locator('[aria-current="step"]')).toContainText('Em atendimento')
   await expect(page.getByText('Responsável Marina Almeida')).toBeVisible()
 
   // o prazo relevante aparece como badge (tempo restante) no cabeçalho do chamado

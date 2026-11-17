@@ -13,7 +13,7 @@ test('Marina pega um chamado da fila do grupo e ele passa para Meus, em atendime
   await primeiraLinha.click()
 
   await page.getByRole('button', { name: 'Pegar para atender' }).click()
-  await expect(page.getByText('Em atendimento', { exact: true }).first()).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Status' }).locator('[aria-current="step"]')).toContainText('Em atendimento')
 
   await page.getByRole('tab', { name: /^Meus/ }).click()
   await expect(lista.getByText(new RegExp(numero!))).toBeVisible()
