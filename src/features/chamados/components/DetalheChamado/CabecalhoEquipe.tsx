@@ -41,7 +41,18 @@ export function CabecalhoEquipe({ chamado, usuario, usuarios, agora, reabertoEm,
 
 function FaixaPrazo({ chamado, usuario, agora }: { chamado: Chamado; usuario: Usuario; agora: number }) {
   const faixa = faixaSla(chamado, agora)
-  if (faixa === 'encerrado') return null
+  if (faixa === 'encerrado') {
+    // destaque verde ao finalizar: quando foi resolvido/fechado e se ficou dentro do prazo de resolução
+    const quandoFim = chamado.status === 'fechado' ? chamado.fechado_em : chamado.resolvido_em
+    const dentro = chamado.resolvido_em !== null && chamado.resolvido_em <= chamado.prazo_resolucao
+    return (
+      <div className={`${s.faixaPrazo} ${s.resolvido}`} role="status">
+        <IconeFeito />
+        <strong>{chamado.status === 'fechado' ? 'Fechado' : 'Resolvido'}{quandoFim && <> em <span className={s.mono}>{formatarDataHora(quandoFim, usuario)}</span></>}</strong>
+        <span>{dentro ? 'dentro do prazo de resolução' : <>prazo de resolução era <span className={s.mono}>{formatarDataHora(chamado.prazo_resolucao, usuario)}</span></>}</span>
+      </div>
+    )
+  }
   const { tipo, prazo } = prazoRelevante(chamado)
   const quando = formatarDataHora(prazo, usuario)
   if (faixa === 'pausado') {
@@ -67,5 +78,6 @@ function FaixaPrazo({ chamado, usuario, agora }: { chamado: Chamado; usuario: Us
   )
 }
 
+const IconeFeito = () => <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></svg>
 const IconePrazo = () => <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10 2h4" /><path d="m12 14 3-3" /><circle cx="12" cy="14" r="8" /></svg>
 export const IconeConversa = () => <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>

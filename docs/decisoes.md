@@ -282,9 +282,9 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 | Motivo (diálogo de status) | igual | `historico.motivo`; enunciado: "mudar o status registrando o motivo" |
 | Aguardando retorno do cliente, Aguardando validação, Solicitadas informações adicionais (opções de "Em atendimento → Aguardando cliente") | igual | `historico.motivo` do `dados.json` |
 | Correção aplicada, Problema não reproduzido, Resolvido com workaround (opções de "Em atendimento → Resolvido") | igual | `historico.motivo` do `dados.json` |
-| Fechado após confirmação do cliente (chip de "Resolvido → Fechado", pela equipe) | igual | `historico.motivo` do `dados.json` |
-| Reaberto a pedido do cliente (chip de "Resolvido/Fechado → Em atendimento") | igual | `historico.motivo` do `dados.json` |
-| Outro motivo (chip do diálogo de status, equipe) | — | sem equivalente no arquivo; cobre transição sem motivo registrado e qualquer motivo fora da lista |
+| Fechado após confirmação do cliente (opção de "Resolvido → Fechado", pela equipe) | igual | `historico.motivo` do `dados.json` |
+| Reaberto a pedido do cliente (opção de "Resolvido/Fechado → Em atendimento") | igual | `historico.motivo` do `dados.json` |
+| Outro motivo (opção do diálogo de status, equipe) | — | sem equivalente no arquivo; cobre transição sem motivo registrado e qualquer motivo fora da lista |
 | Nota interna, Nota interna · só a equipe vê, Salvar nota | igual | `mensagens.interna`; enunciado: "anotações internas para colegas" |
 | Resposta ao cliente | igual | `mensagens.interna: false` |
 | X ficou responsável (linha do tempo) | igual | `historico.tipo: atribuicao` |

@@ -102,3 +102,11 @@
 @media (prefers-reduced-motion: reduce) { .nova, .compor, .segmento { transition: none; } }
 
 .selectMotivo { width: 100%; height: 44px; }
+
+/* chamado terminado (resolvido ou fechado): destaque verde no stepper e na faixa */
+.concluido .feito .marco { border-color: var(--sla-ok); background: var(--sla-ok); }
+.concluido .feito + li::before, .passos.concluido .atual::before { background: var(--sla-ok); }
+.concluido .atual { color: var(--sla-ok) !important; }
+.concluido .atual .marco { border-color: var(--sla-ok); box-shadow: 0 0 0 3px var(--sla-ok-suave); }
+.concluido .atual .marco::after { background: var(--sla-ok); }
+.resolvido { background: var(--sla-ok-suave); color: #14532d; } .resolvido svg, .resolvido strong { color: var(--sla-ok); }

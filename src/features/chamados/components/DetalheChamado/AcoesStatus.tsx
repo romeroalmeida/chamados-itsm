@@ -29,6 +29,10 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
   const [atribuindo, setAtribuindo] = useState(false)
 
   const erro = (e: Error) => notificar({ titulo: 'Não deu certo', descricao: e.message, tipo: 'erro' })
+  // destaque verde ao finalizar o chamado
+  const avisarFim = (para: Status) => {
+    if (para === 'resolvido' || para === 'fechado') notificar({ titulo: `Chamado #${chamado.numero} ${para === 'resolvido' ? 'resolvido' : 'fechado'}`, tipo: 'sucesso' })
+  }
   const transicoes = transicoesPermitidas(chamado.status, usuario.perfil)
   const semDono = chamado.responsavel_id === null
   const podePegar = usuario.perfil === 'consultor' && semDono && chamado.grupo_id === usuario.grupo_id
@@ -36,7 +40,7 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
 
   const executar = (para: Status) => {
     const automatico = motivoAutomatico(chamado.status, para, usuario.perfil)
-    if (automatico) { mudar.mutate({ para }, { onError: erro }); return }
+    if (automatico) { mudar.mutate({ para }, { onSuccess: () => avisarFim(para), onError: erro }); return }
     setAlvo(para)
     const sugestoes = usuario.perfil !== 'cliente' ? motivosSugeridos(chamado.status, para) : []
     const unica = sugestoes.length === 1 ? sugestoes[0] : undefined
@@ -50,6 +54,7 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
     mudar.mutate({ para: alvo, motivo: texto }, {
       onSuccess() {
         setAlvo(null)
+        avisarFim(alvo)
         // ordem obrigatória (spec §5.3): primeiro /status, depois /mensagens
         if (reabrirInicial !== undefined) {
           enviarMensagem.mutate({ texto, interna: false }, {

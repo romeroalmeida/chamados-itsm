@@ -7,7 +7,8 @@ export interface Passo { rotulo: string; status: readonly Status[] }
 export function Passos({ passos, status, nota, rotulo = 'Status' }: { passos: readonly Passo[]; status: Status; nota?: string; rotulo?: string }) {
   const atual = passos.findIndex((p) => p.status.includes(status))
   return (
-    <ol className={s.passos} aria-label={rotulo}>
+    // resolvido ou fechado: o caminho fica verde, para marcar que o chamado terminou
+    <ol className={`${s.passos} ${status === 'resolvido' || status === 'fechado' ? s.concluido : ''}`} aria-label={rotulo}>
       {passos.map((p, i) => (
         <li key={p.rotulo} className={i < atual ? s.feito : i === atual ? s.atual : undefined} aria-current={i === atual ? 'step' : undefined}>
           <span className={s.marco} aria-hidden>{i < atual && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}</span>

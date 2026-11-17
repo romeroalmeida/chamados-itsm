@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { Button } from '../Button/Button'
 import s from './Toast.module.css'
 
-export interface ToastItem { id: string; titulo: string; descricao?: string; tipo?: 'info' | 'erro' | 'alerta'; acao?: { rotulo: string; onClick: () => void }; duracaoMs?: number }
+export interface ToastItem { id: string; titulo: string; descricao?: string; tipo?: 'info' | 'erro' | 'alerta' | 'sucesso'; acao?: { rotulo: string; onClick: () => void }; duracaoMs?: number }
 interface Ctx { notificar(t: Omit<ToastItem, 'id'> & { id?: string }): void }
 const ToastCtx = createContext<Ctx | null>(null)
 
@@ -19,7 +19,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <RT.Provider swipeDirection="right">
         {children}
         {itens.map((t) => (
-          <RT.Root key={t.id} className={`${s.toast} ${t.tipo === 'erro' ? s.erro : t.tipo === 'alerta' ? s.alerta : ''}`} duration={t.duracaoMs ?? 6000}
+          <RT.Root key={t.id} className={`${s.toast} ${t.tipo === 'erro' ? s.erro : t.tipo === 'alerta' ? s.alerta : t.tipo === 'sucesso' ? s.sucesso : ''}`} duration={t.duracaoMs ?? 6000}
             onOpenChange={(o) => !o && setItens((a) => a.filter((x) => x.id !== t.id))}>
             <div className={s.cabecalho}>
               <span className={s.ponto} aria-hidden />
