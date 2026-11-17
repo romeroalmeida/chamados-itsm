@@ -57,8 +57,9 @@ export function FilaConsultorPage() {
   const lista = useMemo(() => filtrarFila(todos, usuario, filtro, agora, nomes), [todos, usuario, filtro, agora, nomes])
   const grupos = useMemo(() => {
     const porId = new Map(agruparPorUrgencia(lista, agora, usuario.zoneinfo).map((g) => [g.id, g.chamados]))
-    return GRUPOS_URGENCIA.map((g) => ({ ...g, chamados: porId.get(g.id)! }))
-  }, [lista, agora, usuario.zoneinfo])
+    // "mais antigo primeiro" só é verdade na ordenação por prazo
+    return GRUPOS_URGENCIA.map((g) => ({ ...g, dica: g.id === 'vencidos' && filtro.ordem !== 'estoura' ? undefined : g.dica, chamados: porId.get(g.id)! }))
+  }, [lista, agora, usuario.zoneinfo, filtro.ordem])
   const respondeu = useMemo(() => {
     const porChamado = new Map((ultimas.data ?? []).map((u) => [u.chamado_id, u]))
     return new Set(lista.filter((c) => clienteRespondeu(c, porChamado.get(c.id))).map((c) => c.id))
@@ -90,7 +91,7 @@ export function FilaConsultorPage() {
     <div className={`${s.pagina} ${id ? s.comChamado : ''}`}>
       <section className={`${s.fila} ${id ? s.comDetalhe : ''}`} aria-label="Fila">
         <div className={s.cabeca}>
-          <Tabs variante="cheio" ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Fila do grupo', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => setFiltro((f) => ({ ...f, aba: v as AbaFila }))}>
+          <Tabs ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Fila do grupo', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => setFiltro((f) => ({ ...f, aba: v as AbaFila }))}>
             <div className={s.saltos} role="group" aria-label="Ir para o prazo">
               {SALTOS.map((g) => {
                 const grupo = grupos.find((x) => x.id === g)!
