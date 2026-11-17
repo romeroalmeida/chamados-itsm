@@ -17,7 +17,8 @@ test('Marina marca um chamado como resolvido informando o motivo (obrigatório)'
   const confirmar = dialogo.getByRole('button', { name: 'Confirmar' })
   await expect(confirmar).toBeDisabled()
 
-  await dialogo.getByRole('radio', { name: 'Correção aplicada' }).check()
+  await dialogo.getByRole('combobox', { name: 'Motivo' }).click()
+  await page.getByRole('option', { name: 'Correção aplicada' }).click()
   await expect(confirmar).toBeEnabled()
   await confirmar.click()
 

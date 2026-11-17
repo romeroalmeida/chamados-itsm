@@ -42,7 +42,8 @@ it('equipe: escolher uma sugestão de motivo envia o texto da sugestão', async 
   const confirmar = screen.getByRole('button', { name: /^confirmar$/i })
   expect(confirmar).toBeDisabled()
 
-  await userEvent.click(screen.getByRole('radio', { name: 'Correção aplicada' }))
+  await userEvent.click(screen.getByRole('combobox', { name: 'Motivo' }))
+  await userEvent.click(await screen.findByRole('option', { name: 'Correção aplicada' }))
   expect(confirmar).toBeEnabled()
   await userEvent.click(confirmar)
 
@@ -60,7 +61,8 @@ it('equipe: "Outro motivo" exige texto antes de confirmar', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Marcar como resolvido' }))
   const confirmar = screen.getByRole('button', { name: /^confirmar$/i })
 
-  await userEvent.click(screen.getByRole('radio', { name: 'Outro motivo' }))
+  await userEvent.click(screen.getByRole('combobox', { name: 'Motivo' }))
+  await userEvent.click(await screen.findByRole('option', { name: 'Outro motivo' }))
   expect(confirmar).toBeDisabled()
 
   await userEvent.type(screen.getByLabelText('Descreva o motivo'), 'Reiniciado após ajuste manual')

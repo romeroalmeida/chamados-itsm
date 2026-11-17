@@ -78,26 +78,16 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
         {usuario.perfil === 'cliente' ? (
           <Campo multilinha rotulo="Conte o que aconteceu" value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
         ) : (
-          <fieldset className={s.motivo}>
-            <legend className={s.rotulo} id="lb-motivo">Motivo</legend>
-            <div className={s.chips} role="radiogroup" aria-labelledby="lb-motivo">
-              {alvo && motivosSugeridos(chamado.status, alvo).map((sugestao) => (
-                <label key={sugestao} className={s.chip}>
-                  <input type="radio" name="motivo" value={sugestao} checked={opcaoMotivo === sugestao}
-                    onChange={() => { setOpcaoMotivo(sugestao); setMotivo(sugestao) }} />
-                  <span>{sugestao}</span>
-                </label>
-              ))}
-              <label className={s.chip}>
-                <input type="radio" name="motivo" value="outro" checked={opcaoMotivo === 'outro'}
-                  onChange={() => { setOpcaoMotivo('outro'); setMotivo('') }} />
-                <span>Outro motivo</span>
-              </label>
-            </div>
+          <div className={s.motivo}>
+            <span className={s.rotulo} id="lb-motivo">Motivo</span>
+            {/* opções vindas do historico.motivo do dados.json, mais "Outro motivo" para texto livre */}
+            <Select ariaLabel="Motivo" className={s.selectMotivo} valor={opcaoMotivo ?? undefined} placeholder="Escolha o motivo"
+              opcoes={[...(alvo ? motivosSugeridos(chamado.status, alvo) : []).map((m) => ({ valor: m, rotulo: m })), { valor: 'outro', rotulo: 'Outro motivo' }]}
+              onChange={(v) => { setOpcaoMotivo(v); setMotivo(v === 'outro' ? '' : v) }} />
             {opcaoMotivo === 'outro' && (
               <Campo multilinha rotulo="Descreva o motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
             )}
-          </fieldset>
+          </div>
         )}
       </Dialog>
 
