@@ -6,3 +6,7 @@
 .velocidades { display: inline-flex; gap: 2px; }
 .velocidades .botao[aria-pressed="true"] { background: var(--cor-primaria); border-color: var(--cor-primaria); }
 .espaco { flex: 1; }
+@media (max-width: 480px) {
+  .painel { font-size: 13px; }
+  .botao { min-height: 40px; padding: 0 12px; font-size: 13px; }
+}
