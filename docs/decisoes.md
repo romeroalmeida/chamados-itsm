@@ -202,15 +202,15 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Onde no código.** `src/shared/utils/equipe.ts` (`ociosoNaJanela`).
 
-## Sem e2e
+## Testes de ponta a ponta com Playwright
 
-**Decisão.** Testes de unidade e de componente com Vitest e Testing Library. Nenhum teste e2e.
+**Decisão.** Além dos testes de unidade e de componente com Vitest e Testing Library, há 9 testes de ponta a ponta com Playwright, um por requisito do enunciado e um de tempo real com duas abas.
 
-**Alternativas.** Playwright com duas abas.
+**Alternativas.** Só Vitest, deixando o e2e como próximo passo.
 
-**Por quê.** As regras que mais quebram (reducer, handlers, SLA, transições, visibilidade, tempo sem chamado atribuído) são funções puras e foram testadas sem tela. O e2e com duas abas é o próximo passo, anotado no README.
+**Por quê.** As regras que mais quebram (reducer, handlers, SLA, transições, visibilidade) são funções puras e estão cobertas no Vitest. O e2e prova que os seis requisitos funcionam na tela, como o avaliador vai usar, e que a mensagem de uma aba aparece na outra sem recarregar.
 
-**Onde no código.** Arquivos `*.test.ts` e `*.test.tsx` ao lado do código, `src/tests/`.
+**Onde no código.** `e2e/`, `playwright.config.ts` (servidor próprio na porta 5180), script `pnpm test:e2e`.
 
 ## Fila agrupada pelo prazo, sem virtualização
 
