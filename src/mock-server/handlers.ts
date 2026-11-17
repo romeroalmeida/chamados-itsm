@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse, type HttpHandler } from 'msw'
 import type { Chamado, Evento, Mensagem, Prioridade, Status, UltimaMensagem, Usuario } from '@/shared/types'
+import { CODIGO_DEMO } from '@/shared/utils/demo'
 import { calcularPrazos } from '@/shared/utils/sla'
 import { MOTIVO_CLIENTE_RESPONDEU, MOTIVO_PEGOU, motivoAtribuidoPor, motivoAutomatico, transicaoValida } from '@/shared/utils/status'
 import { historicoParaPerfil, mensagemVisivel, visivelPara } from '@/shared/utils/visibilidade'
@@ -10,8 +11,6 @@ import { erro, respostaErro } from './erros'
 /** Tempo de rede simulado no login, só no navegador: dá a sensação de envio e de entrada. Nos testes (node) não espera. */
 const latencia = (ms: number) => (typeof window !== 'undefined' ? delay(ms) : Promise.resolve())
 
-/** Login sem senha: o "e-mail" com o código nunca sai daqui, então o código de todos é este. */
-export const CODIGO_DEMO = '123456'
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 /** Curinga de origem: em msw/node não há document.baseURI, e caminho relativo não casaria com http://localhost/api. */
 export const BASE = '*/api'
@@ -62,10 +61,9 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
     })),
     http.post(`${BASE}/auth/entrar`, tentar(async (req) => {
       await latencia(900)
-      // `pin` continua aceito: é o nome antigo do mesmo campo.
-      const { email, codigo, pin } = await corpo<{ email: string; codigo: string; pin: string }>(req)
+      const { email, codigo } = await corpo<{ email: string; codigo: string }>(req)
       const u = Object.values(db.estado().usuarios).find((u) => u.email.toLowerCase() === String(email ?? '').trim().toLowerCase())
-      if (!u || (codigo ?? pin) !== CODIGO_DEMO) throw erro('nao_autenticado', 'Código incorreto. Confira e tente de novo.')
+      if (!u || codigo !== CODIGO_DEMO) throw erro('nao_autenticado', 'Código incorreto. Confira e tente de novo.')
       return HttpResponse.json(u)
     })),
 

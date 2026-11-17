@@ -10,7 +10,8 @@ import { relogio } from '@/shared/utils/relogio'
 import { useSessao } from '@/state/sessao'
 import { ROTA_INICIAL } from '@/shared/utils/rotas'
 import { CampoCodigo } from '../../components/CampoCodigo/CampoCodigo'
-import { CODIGO_DEMO, entrar, PERSONAS, pedirCodigo } from '../../services/entrar'
+import { CODIGO_DEMO } from '@/shared/utils/demo'
+import { entrar, PERSONAS, pedirCodigo } from '../../services/entrar'
 import s from './LoginPage.module.css'
 
 const ESPERA_REENVIO = 60

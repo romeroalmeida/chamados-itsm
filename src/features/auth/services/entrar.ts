@@ -10,4 +10,3 @@ export const PERSONAS = [
   { nome: 'Ricardo Monteiro', perfil: 'Gestor', email: 'ricardo.monteiro@suporte.example' },
   { nome: 'Helena Fernandes', perfil: 'Cliente', email: 'helena.fernandes@lusitania.example' },
 ] as const
-export const CODIGO_DEMO = '123456'

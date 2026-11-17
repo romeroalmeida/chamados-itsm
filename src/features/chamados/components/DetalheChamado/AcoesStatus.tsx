@@ -84,7 +84,7 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
           <Campo multilinha rotulo="Conte o que aconteceu" value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
         ) : (
           <div className={s.motivo}>
-            <span className={s.rotulo} id="lb-motivo">Motivo</span>
+            <span className={s.rotulo}>Motivo</span>
             {/* opções vindas do historico.motivo do dados.json, mais "Outro motivo" para texto livre */}
             <Select ariaLabel="Motivo" className={s.selectMotivo} valor={opcaoMotivo ?? undefined} placeholder="Escolha o motivo"
               opcoes={[...(alvo ? motivosSugeridos(chamado.status, alvo) : []).map((m) => ({ valor: m, rotulo: m })), { valor: 'outro', rotulo: 'Outro motivo' }]}

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { setupServer } from 'msw/node'
-import { criarHandlers, CODIGO_DEMO } from './handlers'
+import { criarHandlers } from './handlers'
+import { CODIGO_DEMO } from '@/shared/utils/demo'
 import { criarDb, type Db } from './db'
 import { criarBus } from './bus'
 import { criarEventLog } from './eventLog'
@@ -56,9 +57,6 @@ describe('auth', () => {
     const r = await semSessao('/auth/entrar', { email: MARINA.email, codigo: CODIGO_DEMO })
     expect(r.status).toBe(200)
     expect((await r.json()).id).toBe(MARINA.id)
-  })
-  it('ainda aceita o campo antigo pin', async () => {
-    expect((await semSessao('/auth/entrar', { email: MARINA.email, pin: CODIGO_DEMO })).status).toBe(200)
   })
   it('código errado ou e-mail desconhecido dá 401', async () => {
     expect((await semSessao('/auth/entrar', { email: MARINA.email, codigo: '000000' })).status).toBe(401)
