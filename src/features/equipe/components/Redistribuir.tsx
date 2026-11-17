@@ -6,16 +6,21 @@ import s from './equipe.module.css'
 
 interface Props { chamados: Chamado[]; consultores: UsuarioConsultor[]; usuarios: Record<string, Usuario>; agora: number; onFechar: () => void }
 
-/** Spec §5.2: seleção múltipla, um POST /atribuir por chamado. */
+/** Spec §5.2: seleção múltipla, um POST /atribuir por chamado. O destino tem de ser do grupo do chamado (regra do /atribuir). */
 export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar }: Props) {
   const [marcados, setMarcados] = useState<Set<string>>(new Set())
   const [destino, setDestino] = useState<string | undefined>()
   const atribuir = useAtribuir()
   const { notificar } = useToast()
+  // grupos dos chamados marcados (ou de todos, antes de marcar): o destino só pode vir de um grupo
+  const grupos = new Set(chamados.filter((c) => marcados.size === 0 || marcados.has(c.id)).map((c) => c.grupo_id))
+  const misturados = marcados.size > 0 && grupos.size > 1
+  const opcoes = grupos.size === 1 ? consultores.filter((k) => grupos.has(k.grupo_id)).map((k) => ({ valor: k.id, rotulo: k.nome })) : []
+  const destinoValido = opcoes.some((o) => o.valor === destino) ? destino : undefined
   const alternar = (id: string) => setMarcados((m) => { const n = new Set(m); n.has(id) ? n.delete(id) : n.add(id); return n })
   const executar = async () => {
-    if (!destino) return
-    const resultados = await Promise.allSettled([...marcados].map((chamadoId) => atribuir.mutateAsync({ chamadoId, consultorId: destino })))
+    if (!destinoValido) return
+    const resultados = await Promise.allSettled([...marcados].map((chamadoId) => atribuir.mutateAsync({ chamadoId, consultorId: destinoValido })))
     const falhas = resultados.filter((r) => r.status === 'rejected')
     if (falhas.length) notificar({ titulo: `${falhas.length} não redistribuídos`, descricao: (falhas[0] as PromiseRejectedResult).reason?.message, tipo: 'erro' })
     else { notificar({ titulo: `${marcados.size} chamados redistribuídos` }); onFechar() }
@@ -36,8 +41,9 @@ export function Redistribuir({ chamados, consultores, usuarios, agora, onFechar 
         </table>
       </div>
       <div className={s.barra}>
-        <Select ariaLabel="Destino" valor={destino} onChange={setDestino} placeholder="Redistribuir para…" opcoes={consultores.map((c) => ({ valor: c.id, rotulo: c.nome }))} />
-        <Button variante="primaria" disabled={!destino || marcados.size === 0 || atribuir.isPending} onClick={executar}>Redistribuir {marcados.size || ''}</Button>
+        <Select ariaLabel="Destino" valor={destinoValido} onChange={setDestino} placeholder="Redistribuir para…" opcoes={opcoes} />
+        <Button variante="primaria" disabled={!destinoValido || misturados || marcados.size === 0 || atribuir.isPending} onClick={executar} aria-describedby={misturados ? 'redistribuir-dica' : undefined}>Redistribuir {marcados.size || ''}</Button>
+        {misturados && <small id="redistribuir-dica" className={s.dica}>Selecione chamados de um mesmo grupo</small>}
         <Button onClick={onFechar}>Fechar</Button>
       </div>
     </div>

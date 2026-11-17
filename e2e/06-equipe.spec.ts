@@ -24,7 +24,8 @@ test('Ricardo vê os 12 consultores, as seções da equipe e redistribui um cham
 
   const painel = page.getByRole('heading', { name: 'Chamados de Marina Almeida' })
   await expect(painel).toBeVisible()
-  await page.getByRole('checkbox', { name: /^Selecionar #/ }).first().check()
+  // #10608 é do grupo Aplicações (Marina é Infraestrutura): o destino tem de vir do grupo do chamado
+  await page.getByRole('checkbox', { name: 'Selecionar #10608' }).check()
 
   const destinoSelect = page.getByRole('combobox', { name: 'Destino' })
   await destinoSelect.click()

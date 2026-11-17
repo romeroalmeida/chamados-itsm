@@ -78,3 +78,4 @@
 /* rodapé no fim do cartão; o texto quebra linha e Redistribuir fica sempre ao lado, à direita */
 .rodape > span { flex: 1; min-width: 0; }
 .rodape > button { flex: none; margin-left: auto; }
+.dica { font-size: 12.5px; color: var(--cor-texto-fraco); }

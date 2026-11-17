@@ -67,7 +67,7 @@ export function EquipePage() {
           <div className={s.detalhe} ref={painel}>
             <h3 className={s.subtituloPainel}>Chamados de {consultorAberto.consultor.nome}</h3>
             <Redistribuir key={consultorAberto.consultor.id} chamados={ordenarEstouraPrimeiro(lista.filter((c) => c.responsavel_id === consultorAberto.consultor.id && !ehEncerrado(c)), agora)}
-              consultores={consultores.filter((k) => k.grupo_id === consultorAberto.consultor.grupo_id && k.id !== consultorAberto.consultor.id)} usuarios={usuarios} agora={agora} onFechar={() => setAberto(null)} />
+              consultores={consultores.filter((k) => k.id !== consultorAberto.consultor.id)} usuarios={usuarios} agora={agora} onFechar={() => setAberto(null)} />
           </div>
         )}
       </section>
