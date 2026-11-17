@@ -1,4 +1,4 @@
-import { http, HttpResponse, type HttpHandler } from 'msw'
+import { delay, http, HttpResponse, type HttpHandler } from 'msw'
 import type { Chamado, Evento, Mensagem, Prioridade, Status, UltimaMensagem, Usuario } from '@/shared/types'
 import { calcularPrazos } from '@/shared/utils/sla'
 import { MOTIVO_CLIENTE_RESPONDEU, MOTIVO_PEGOU, motivoAtribuidoPor, motivoAutomatico, transicaoValida } from '@/shared/utils/status'
@@ -6,6 +6,9 @@ import { historicoParaPerfil, mensagemVisivel, visivelPara } from '@/shared/util
 import type { Relogio } from '@/shared/utils/relogio'
 import type { Db } from './db'
 import { erro, respostaErro } from './erros'
+
+/** Tempo de rede simulado no login, só no navegador: dá a sensação de envio e de entrada. Nos testes (node) não espera. */
+const latencia = (ms: number) => (typeof window !== 'undefined' ? delay(ms) : Promise.resolve())
 
 /** Login sem senha: o "e-mail" com o código nunca sai daqui, então o código de todos é este. */
 export const CODIGO_DEMO = '123456'
@@ -52,11 +55,13 @@ export function criarHandlers({ db, relogio }: Deps): HttpHandler[] {
   return [
     // Responde igual exista ou não o usuário: não dá para descobrir quem tem conta pedindo código.
     http.post(`${BASE}/auth/codigo`, tentar(async (req) => {
+      await latencia(700)
       const { email } = await corpo<{ email: string }>(req)
       if (!EMAIL_VALIDO.test(String(email ?? '').trim())) throw erro('validacao', 'Digite um e-mail válido')
       return HttpResponse.json({ ok: true })
     })),
     http.post(`${BASE}/auth/entrar`, tentar(async (req) => {
+      await latencia(900)
       // `pin` continua aceito: é o nome antigo do mesmo campo.
       const { email, codigo, pin } = await corpo<{ email: string; codigo: string; pin: string }>(req)
       const u = Object.values(db.estado().usuarios).find((u) => u.email.toLowerCase() === String(email ?? '').trim().toLowerCase())

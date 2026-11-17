@@ -129,8 +129,8 @@ function TelaEmail({ email, setEmail, pedir }: { email: string; setEmail: (v: st
             aria-invalid={erro ? true : undefined} aria-describedby={erro ? 'email-erro' : undefined} />
           {erro && <p id="email-erro" role="alert" className={s.erro}>{erro}</p>}
         </div>
-        <button type="submit" className={s.botao} disabled={pedir.isPending}>
-          {pedir.isPending ? 'Enviando…' : <>Receber o código <Icone nome="seta" className={s.botaoSeta} /></>}
+        <button type="submit" className={`${s.botao} ${pedir.isPending ? s.carregando : ''}`} disabled={pedir.isPending} aria-busy={pedir.isPending}>
+          {pedir.isPending ? <><Spinner />Enviando código…</> : <>Receber o código <Icone nome="seta" className={s.botaoSeta} /></>}
         </button>
       </form>
       <div className={s.personas}>
@@ -193,10 +193,15 @@ function TelaCodigo({ email, entrada, reenviar, reenviando, usarOutro }: { email
             aoMudar={(v) => { setCodigo(v); if (entrada.isError) entrada.reset() }} aoCompletar={tentar} />
           {erro && <p id="codigo-erro" role="alert" className={s.erro}>{erro}</p>}
         </div>
-        <button type="submit" className={s.botao} disabled={entrada.isPending || codigo.length !== 6}>
-          {entrada.isPending ? 'Entrando…' : 'Entrar'}
+        <button type="submit" className={`${s.botao} ${entrada.isPending ? s.carregando : ''}`} disabled={entrada.isPending || codigo.length !== 6} aria-busy={entrada.isPending}>
+          {entrada.isPending ? <><Spinner />Entrando…</> : 'Entrar'}
         </button>
       </form>
     </Moldura>
   )
+}
+
+/** Indicador de carregamento dos botões do login; decorativo, o texto do botão já diz o que está acontecendo. */
+function Spinner() {
+  return <span className={s.spinner} aria-hidden />
 }

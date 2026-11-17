@@ -79,3 +79,9 @@
 .link { padding: 2px 4px; border: 0; border-radius: 6px; background: none; font-weight: 600; color: var(--cor-primaria); }
 .link:hover:not(:disabled) { text-decoration: underline; }
 .link:disabled { cursor: default; font-weight: 400; color: var(--cor-texto-fraco); }
+
+/* carregando: mantém a cor do botão (não parece desativado) e mostra o spinner */
+.botao.carregando:disabled { cursor: progress; background: var(--cor-primaria); box-shadow: 0 8px 20px -8px rgb(79 70 229 / 70%); }
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgb(255 255 255 / 35%); border-top-color: #fff; animation: girar .7s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
