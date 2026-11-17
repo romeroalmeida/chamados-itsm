@@ -52,10 +52,10 @@ export const ROTULO_STATUS: Record<Status, string> = {
 
 export const ROTULO_PRIORIDADE: Record<Prioridade, string> = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' }
 
-/** Linguagem do cliente (spec §5.3). `{nome}` é substituído pelo responsável. */
+/** Selo da cliente, na linguagem dela (spec §5.3); quem cuida aparece ao lado ("com Marina Almeida"). */
 export const ROTULO_STATUS_CLIENTE: Record<Status, string> = {
   aberto: 'Aguardando atendimento',
-  em_atendimento: 'Em atendimento por {nome}',
+  em_atendimento: 'Em atendimento',
   aguardando_cliente: 'Aguardando sua resposta',
   resolvido: 'Resolvido, aguardando sua confirmação',
   fechado: 'Fechado',

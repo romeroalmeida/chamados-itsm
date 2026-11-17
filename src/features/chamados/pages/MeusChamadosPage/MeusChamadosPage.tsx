@@ -1,18 +1,16 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router'
-import type { Chamado, Status, UsuarioCliente } from '@/shared/types'
+import type { Chamado, UsuarioCliente } from '@/shared/types'
 import { useChamados, useDetalhes, useMapaUsuarios } from '@/api/queries'
 import { Carregando, Erro } from '@/shared/components'
 import { useNow } from '@/shared/hooks/useNow'
 import { formatarDataHora } from '@/shared/utils/datas'
-import { ehReabertura } from '@/shared/utils/status'
+import { ehReabertura, ROTULO_STATUS_CLIENTE } from '@/shared/utils/status'
 import { useSessao } from '@/state/sessao'
 import { Novidades } from '../../components/Novidades/Novidades'
 import { proximoPasso, type DetalheCliente, type Tom } from '../../utils/cliente'
 import s from './MeusChamadosPage.module.css'
 
-/** Situação curta, na linguagem dela; quem cuida vem ao lado ("com Marina Almeida"). */
-const SELO: Record<Status, string> = { aberto: 'Aguardando atendimento', em_atendimento: 'Em atendimento', aguardando_cliente: 'Aguardando sua resposta', resolvido: 'Resolvido, aguardando sua confirmação', fechado: 'Fechado' }
 const DIA: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' }
 
 export function MeusChamadosPage() {
@@ -25,6 +23,7 @@ export function MeusChamadosPage() {
   const detalhes = useDetalhes(lista.map((c) => c.id))
   const porId = new Map(detalhes.flatMap((d) => (d.data ? [[d.data.chamado.id, d.data] as const] : [])))
   const itens: DetalheCliente[] = [...porId.values()]
+  const falhas = detalhes.filter((d) => d.isError)
   const nomes = useMemo(() => Object.fromEntries(Object.values(usuarios).map((u) => [u.id, u.nome])), [usuarios])
 
   if (q.isPending) return <Carregando />
@@ -51,6 +50,12 @@ export function MeusChamadosPage() {
         )
         : (
           <>
+            {falhas.length > 0 && (
+              <p role="alert" className={s.aviso}>
+                Não foi possível carregar o andamento de alguns chamados.
+                <button type="button" className={s.avisoBotao} onClick={() => falhas.forEach((d) => d.refetch())}>Tentar de novo</button>
+              </p>
+            )}
             <Novidades itens={itens} usuario={usuario} nomes={nomes} agora={agora} onAbrir={abrir} />
             <div className={s.lista}>
               {abertos.map((c) => cartao(c, porId.get(c.id)))}
@@ -83,7 +88,7 @@ export function MeusChamadosPage() {
       <button key={c.id} type="button" className={s.cartao} onClick={() => abrir(c.id)}>
         <span className={s.l1}><strong>{c.titulo}</strong><span className={s.numero}>#{c.numero}</span></span>
         <span className={s.l2}>
-          <span className={`${s.selo} ${c.status === 'aberto' ? '' : s.seloPri}`}><i aria-hidden />{SELO[c.status]}</span>
+          <span className={`${s.selo} ${c.status === 'aberto' ? '' : s.seloPri}`}><i aria-hidden />{ROTULO_STATUS_CLIENTE[c.status]}</span>
           {resp && <span>com <b>{resp}</b></span>}
           <span>{reaberto ? `reaberto em ${formatarDataHora(reaberto.ocorrido_em, usuario, DIA)}` : `aberto em ${formatarDataHora(c.aberto_em, usuario)}`}</span>
         </span>

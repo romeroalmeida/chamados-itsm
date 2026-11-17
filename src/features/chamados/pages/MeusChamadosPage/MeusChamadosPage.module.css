@@ -31,3 +31,5 @@
 .botaoAbrir { display: inline-flex; align-items: center; height: 40px; margin-top: 4px; padding: 0 16px; border-radius: 12px; background: var(--cor-primaria); color: #fff; font-weight: 600; text-decoration: none; box-shadow: 0 8px 20px -10px rgb(79 70 229 / 70%); transition: background var(--transicao); }
 .botaoAbrir:hover { background: var(--cor-primaria-hover); }
 @media (max-width: 640px) { .pagina { padding: 20px 16px 32px; } }
+.aviso { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--sla-vencido-suave); color: var(--cor-texto); font-size: 14px; }
+.avisoBotao { min-height: 40px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--cor-primaria); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
