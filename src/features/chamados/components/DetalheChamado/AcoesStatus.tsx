@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Chamado, Status, Usuario, UsuarioConsultor } from '@/shared/types'
 import { Button, Campo, Dialog, Select, useToast } from '@/shared/components'
 import { useAtribuir, useEnviarMensagem, useMudarStatus } from '@/api/queries'
-import { ehReabertura, motivoAutomatico, ROTULO_ACAO, transicoesPermitidas } from '@/shared/utils/status'
+import { ehReabertura, motivoAutomatico, motivosSugeridos, ROTULO_ACAO, transicoesPermitidas } from '@/shared/utils/status'
 import s from './detalhe.module.css'
 
 interface Props {
@@ -23,6 +23,8 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
   const atribuir = useAtribuir()
   const [alvo, setAlvo] = useState<Status | null>(reabrirInicial !== undefined ? 'em_atendimento' : null)
   const [motivo, setMotivo] = useState(reabrirInicial ?? '')
+  /** Rádio escolhido no diálogo da equipe: uma das sugestões, ou 'outro' para o texto livre. */
+  const [opcaoMotivo, setOpcaoMotivo] = useState<string | null>(null)
   const [destino, setDestino] = useState<string | undefined>()
   const [atribuindo, setAtribuindo] = useState(false)
 
@@ -34,8 +36,13 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
 
   const executar = (para: Status) => {
     const automatico = motivoAutomatico(chamado.status, para, usuario.perfil)
-    if (automatico) mudar.mutate({ para }, { onError: erro })
-    else { setAlvo(para); setMotivo('') }
+    if (automatico) { mudar.mutate({ para }, { onError: erro }); return }
+    setAlvo(para)
+    const sugestoes = usuario.perfil !== 'cliente' ? motivosSugeridos(chamado.status, para) : []
+    const unica = sugestoes.length === 1 ? sugestoes[0] : undefined
+    if (unica) { setOpcaoMotivo(unica); setMotivo(unica) }
+    else if (usuario.perfil !== 'cliente' && sugestoes.length === 0) { setOpcaoMotivo('outro'); setMotivo('') }
+    else { setOpcaoMotivo(null); setMotivo('') }
   }
   const confirmar = () => {
     if (!alvo || !motivo.trim()) return
@@ -68,7 +75,30 @@ export function AcoesStatus({ chamado, usuario, consultoresDoGrupo, reabrirInici
 
       <Dialog aberto={alvo !== null} onFechar={() => setAlvo(null)} titulo={alvo && ehReabertura(chamado.status, alvo) ? 'Reabrir chamado' : 'Mudar status'}
         acoes={<><Button onClick={() => setAlvo(null)}>Cancelar</Button><Button variante="primaria" onClick={confirmar} disabled={!motivo.trim() || mudar.isPending}>Confirmar</Button></>}>
-        <Campo multilinha rotulo={usuario.perfil === 'cliente' ? 'Conte o que aconteceu' : 'Motivo'} value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
+        {usuario.perfil === 'cliente' ? (
+          <Campo multilinha rotulo="Conte o que aconteceu" value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
+        ) : (
+          <fieldset className={s.motivo}>
+            <legend className={s.rotulo} id="lb-motivo">Motivo</legend>
+            <div className={s.chips} role="radiogroup" aria-labelledby="lb-motivo">
+              {alvo && motivosSugeridos(chamado.status, alvo).map((sugestao) => (
+                <label key={sugestao} className={s.chip}>
+                  <input type="radio" name="motivo" value={sugestao} checked={opcaoMotivo === sugestao}
+                    onChange={() => { setOpcaoMotivo(sugestao); setMotivo(sugestao) }} />
+                  <span>{sugestao}</span>
+                </label>
+              ))}
+              <label className={s.chip}>
+                <input type="radio" name="motivo" value="outro" checked={opcaoMotivo === 'outro'}
+                  onChange={() => { setOpcaoMotivo('outro'); setMotivo('') }} />
+                <span>Outro motivo</span>
+              </label>
+            </div>
+            {opcaoMotivo === 'outro' && (
+              <Campo multilinha rotulo="Descreva o motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} autoFocus required />
+            )}
+          </fieldset>
+        )}
       </Dialog>
 
       <Dialog aberto={atribuindo} onFechar={() => setAtribuindo(false)} titulo="Atribuir chamado"

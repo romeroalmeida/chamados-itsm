@@ -69,3 +69,17 @@ export const ROTULO_ACAO: Partial<Record<`${Status}>${Status}`, string>> = {
   'resolvido>em_atendimento': 'Reabrir',
   'fechado>em_atendimento': 'Reabrir',
 }
+
+/** Sugestões de motivo por transição (equipe), extraídas das strings reais de historico.motivo em dados.json. */
+export const MOTIVOS_SUGERIDOS: Partial<Record<`${Status}>${Status}`, string[]>> = {
+  'em_atendimento>aguardando_cliente': ['Aguardando retorno do cliente', 'Aguardando validação', 'Solicitadas informações adicionais'],
+  'em_atendimento>resolvido': ['Correção aplicada', 'Problema não reproduzido', 'Resolvido com workaround'],
+  'resolvido>fechado': ['Fechado após confirmação do cliente'],
+  'fechado>em_atendimento': ['Reaberto a pedido do cliente'],
+  'resolvido>em_atendimento': ['Reaberto a pedido do cliente'],
+  // 'aguardando_cliente>em_atendimento' não tem motivo registrado em dados.json: só "Outro motivo".
+}
+
+export function motivosSugeridos(de: Status, para: Status): string[] {
+  return MOTIVOS_SUGERIDOS[`${de}>${para}`] ?? []
+}

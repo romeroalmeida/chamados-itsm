@@ -62,6 +62,17 @@
 .maisAntigas { display: block; height: 32px; margin: 0 auto 12px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--cor-texto-fraco); font-size: 13px; font-weight: 600; transition: background var(--transicao), color var(--transicao); }
 .maisAntigas:hover { background: var(--cor-superficie-2); color: var(--cor-texto); }
 
+/* diálogo de motivo (equipe) */
+.motivo { display: grid; gap: 12px; margin: 0; padding: 0; border: 0; }
+.rotulo { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.chip span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border: 1.5px solid transparent; border-radius: 12px; background: var(--cor-campo); font-size: 14px; font-weight: 500; transition: border-color var(--transicao), background var(--transicao), box-shadow var(--transicao); }
+.chip:hover span { background: var(--cor-campo-hover); }
+.chip input:checked + span { border-color: var(--cor-primaria); background: var(--cor-primaria-suave); color: var(--cor-primaria-escuro); font-weight: 600; }
+.chip input:focus-visible + span { border-color: var(--cor-primaria); box-shadow: var(--anel-foco); }
+
 /* caixa de resposta */
 .caixa { display: grid; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid var(--cor-borda); background: var(--cor-superficie); }
 .caixaLinha { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }

@@ -90,7 +90,7 @@ src/
 
     pnpm test
 
-São 146 testes em 28 arquivos, com Vitest e Testing Library. Cobrem o reducer (os quatro eventos, dedupe, primeira resposta), os handlers (eventos derivados, `409` ao pegar chamado com dono, `400` sem motivo ou fora da tabela, permissões por perfil, preenchimento de número, grupo e prazos), o socket filtrando por perfil, o bus, o log e o relógio virtual. Cobrem também as regras puras: faixas de SLA e ordenação "Estoura primeiro", tabela de transições, similaridade com o par #10612/#10614 e tempo sem chamado atribuído. Na tela, testam o login dos três perfis, o alerta de prazo que dispara uma vez por faixa, a conversa que não rola enquanto se digita, a sugestão de reabertura e a redistribuição.
+São 148 testes em 28 arquivos, com Vitest e Testing Library. Cobrem o reducer (os quatro eventos, dedupe, primeira resposta), os handlers (eventos derivados, `409` ao pegar chamado com dono, `400` sem motivo ou fora da tabela, permissões por perfil, preenchimento de número, grupo e prazos), o socket filtrando por perfil, o bus, o log e o relógio virtual. Cobrem também as regras puras: faixas de SLA e ordenação "Estoura primeiro", tabela de transições, similaridade com o par #10612/#10614 e tempo sem chamado atribuído. Na tela, testam o login dos três perfis, o alerta de prazo que dispara uma vez por faixa, a conversa que não rola enquanto se digita, a sugestão de reabertura e a redistribuição.
 
 ### E2E (Playwright)
 
