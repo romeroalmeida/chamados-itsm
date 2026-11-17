@@ -6,7 +6,10 @@ export const JANELA_OCIOSO = 7 * DIA
 
 export interface AgregadoConsultor {
   consultor: UsuarioConsultor
+  /** Não resolvidos nem fechados (em_atendimento + aguardando_cliente; aberto não tem responsável). Só ordena e escala; a tela mostra os dois status separados. */
   ativos: number
+  emAtendimento: number
+  aguardandoCliente: number
   vencidos: number
   vencendo4h: number
   /** Aguardando o cliente: SLA pausado. */
@@ -71,6 +74,8 @@ export function agregadosPorConsultor(consultores: UsuarioConsultor[], chamados:
     return {
       consultor,
       ativos: dele.length,
+      emAtendimento: dele.filter((c) => c.status === 'em_atendimento').length,
+      aguardandoCliente: dele.filter((c) => c.status === 'aguardando_cliente').length,
       vencidos: faixas.filter((f) => f === 'vencido').length,
       vencendo4h: faixas.filter((f) => f === 'critico' || f === 'ultima_hora').length,
       pausados: faixas.filter((f) => f === 'pausado').length,

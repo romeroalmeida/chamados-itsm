@@ -36,7 +36,7 @@ export function DetalheCliente({ detalhe, usuario, usuarios, acoes, textoCaixa }
           <span className={s.avatar} aria-hidden>{resp ? iniciais(resp.nome) : '?'}</span>
           <p>
             {chamado.status === 'fechado'
-              ? <>Chamado encerrado{chamado.fechado_em && ` em ${formatarDataHora(chamado.fechado_em, usuario, { day: '2-digit', month: '2-digit' })}`}{resp && <>, atendido por <b>{resp.nome}</b></>}.</>
+              ? <>Chamado fechado{chamado.fechado_em && ` em ${formatarDataHora(chamado.fechado_em, usuario, { day: '2-digit', month: '2-digit' })}`}{resp && <>, atendido por <b>{resp.nome}</b></>}.</>
               : resp ? <><b>{resp.nome}</b> está cuidando do seu chamado.</> : <>Ainda ninguém pegou o seu chamado.</>}
             <small>{passo?.texto ?? 'Se voltou a acontecer, reabra e conte o que houve.'}</small>
           </p>

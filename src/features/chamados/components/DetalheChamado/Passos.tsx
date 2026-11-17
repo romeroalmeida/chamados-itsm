@@ -4,7 +4,7 @@ import s from './detalhe.module.css'
 export interface Passo { rotulo: string; status: readonly Status[] }
 
 /** Stepper de status: passos anteriores marcados, atual em destaque, nota opcional ao lado do atual (ex.: "reaberto"). */
-export function Passos({ passos, status, nota, rotulo = 'Situação' }: { passos: readonly Passo[]; status: Status; nota?: string; rotulo?: string }) {
+export function Passos({ passos, status, nota, rotulo = 'Status' }: { passos: readonly Passo[]; status: Status; nota?: string; rotulo?: string }) {
   const atual = passos.findIndex((p) => p.status.includes(status))
   return (
     <ol className={s.passos} aria-label={rotulo}>
@@ -28,10 +28,11 @@ export const PASSOS_EQUIPE: readonly Passo[] = [
   { rotulo: 'Fechado', status: ['fechado'] },
 ]
 
-/** Na linguagem da cliente: "aguardando cliente" é parte do atendimento. */
+/** Na linguagem da cliente, um passo por status do dados.json: só "aguardando_cliente" muda de nome, porque a cliente é ela. */
 export const PASSOS_CLIENTE: readonly Passo[] = [
-  { rotulo: 'Recebido', status: ['aberto'] },
-  { rotulo: 'Em atendimento', status: ['em_atendimento', 'aguardando_cliente'] },
+  { rotulo: 'Aberto', status: ['aberto'] },
+  { rotulo: 'Em atendimento', status: ['em_atendimento'] },
+  { rotulo: 'Aguardando você', status: ['aguardando_cliente'] },
   { rotulo: 'Resolvido', status: ['resolvido'] },
-  { rotulo: 'Encerrado', status: ['fechado'] },
+  { rotulo: 'Fechado', status: ['fechado'] },
 ]

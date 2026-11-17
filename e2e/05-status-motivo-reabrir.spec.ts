@@ -28,8 +28,8 @@ test('Marina marca um chamado como resolvido informando o motivo (obrigatório)'
 test('Helena reabre um chamado fechado contando o que aconteceu', async ({ page }) => {
   await entrar(page, EMAILS.helena)
   await page.goto(`/chamados/${ID_10612_FECHADO}`)
-  // na tela da cliente o stepper fala a língua dela: fechado é "Encerrado"
-  await expect(page.getByRole('list', { name: 'Situação' }).getByText('Encerrado', { exact: true })).toBeVisible()
+  // na tela da cliente o stepper tem um passo por status do dados.json
+  await expect(page.getByRole('list', { name: 'Status' }).getByText('Fechado', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Reabrir' }).click()
   const dialogo = page.getByRole('dialog')

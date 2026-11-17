@@ -14,8 +14,8 @@ describe('datas', () => {
     expect(formatarDuracao(24 * 3_600_000)).toBe('1 d')
     expect(formatarDuracao(3 * 3_600_000)).toBe('3h')
   })
-  it('relativo: vence em / venceu há', () => {
-    expect(formatarRelativo(40 * 60_000)).toBe('vence em 40 min')
-    expect(formatarRelativo(-3 * 3_600_000)).toBe('venceu há 3h')
+  it('relativo: estoura em / estourou há', () => {
+    expect(formatarRelativo(40 * 60_000)).toBe('estoura em 40 min')
+    expect(formatarRelativo(-3 * 3_600_000)).toBe('estourou há 3h')
   })
 })

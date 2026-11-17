@@ -49,17 +49,17 @@ export function EquipePage() {
       <div className={s.topo}>
         <div>
           <h1 className={s.titulo}>Equipe</h1>
-          <p className={s.subtitulo}>Ordenada por quem está pior: mais vencidos, depois mais ativos.</p>
+          <p className={s.subtitulo}>Ordenada por quem está pior: mais chamados com prazo estourado, depois mais em atendimento e aguardando cliente.</p>
         </div>
         <div className={s.resumo} role="group" aria-label="Resumo">
-          <button type="button" className={s.vencidos} onClick={() => ir('t-equipe')}><b>{resumo.vencidos}</b>vencidos</button>
-          <button type="button" className={s.proxima} onClick={() => ir('t-vencendo')}><b>{resumo.proximaHora}</b>vencem na próxima hora</button>
-          <button type="button" onClick={() => ir('t-semdono')}><b>{semDono.length}</b>sem dono</button>
+          <button type="button" className={s.vencidos} onClick={() => ir('t-equipe')}><b>{resumo.vencidos}</b>com prazo estourado</button>
+          <button type="button" className={s.proxima} onClick={() => ir('t-vencendo')}><b>{resumo.proximaHora}</b>estouram na próxima hora</button>
+          <button type="button" onClick={() => ir('t-semdono')}><b>{semDono.length}</b>na fila, ninguém pegou</button>
         </div>
       </div>
 
       <section className={s.secao} aria-labelledby="t-equipe">
-        <h2 id="t-equipe" className={s.tituloSecao} tabIndex={-1}>Consultores <span className={s.n}>{consultores.length}</span><small>barra = chamados ativos na escala do mais carregado ({maxAtivos})</small></h2>
+        <h2 id="t-equipe" className={s.tituloSecao} tabIndex={-1}>Consultores <span className={s.n}>{consultores.length}</span><small>barra = em atendimento e aguardando cliente, na escala do consultor com mais chamados ({maxAtivos})</small></h2>
         <div className={s.cartoes}>
           {agregados.map((a) => <CartaoConsultor key={a.consultor.id} a={a} grupo={nomeGrupo(a.consultor.grupo_id)} maxAtivos={maxAtivos} sugestao={sugerirDestino(a, agregados)} onAbrir={() => setAberto(a.consultor.id)} />)}
         </div>
@@ -73,8 +73,8 @@ export function EquipePage() {
       </section>
 
       <div className={s.tabelas}>
-        <TabelaChamados id="t-vencendo" titulo="Vencendo nas próximas 4 horas" tipo="vencendo" chamados={vencendo} consultores={consultores} usuarios={usuarios} nomeGrupo={nomeGrupo} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} vazio="Nada vence nas próximas 4 horas." />
-        <TabelaChamados id="t-semdono" titulo="Fila sem dono" tipo="semDono" chamados={semDono} consultores={consultores} usuarios={usuarios} nomeGrupo={nomeGrupo} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} vazio="Nenhum chamado esperando dono." />
+        <TabelaChamados id="t-vencendo" titulo="Estouram o SLA nas próximas 4 horas" tipo="vencendo" chamados={vencendo} consultores={consultores} usuarios={usuarios} nomeGrupo={nomeGrupo} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} vazio="Nenhum chamado estoura o SLA nas próximas 4 horas." />
+        <TabelaChamados id="t-semdono" titulo="Fila do grupo que ninguém pegou" tipo="semDono" chamados={semDono} consultores={consultores} usuarios={usuarios} nomeGrupo={nomeGrupo} agora={agora} onAbrir={(id) => nav(`/chamados/${id}`)} vazio="Nenhum chamado na fila do grupo." />
       </div>
     </div>
   )

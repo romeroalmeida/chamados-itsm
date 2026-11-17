@@ -12,7 +12,7 @@ import { proximoPasso, type DetalheCliente, type Tom } from '../../utils/cliente
 import s from './MeusChamadosPage.module.css'
 
 /** Situação curta, na linguagem dela; quem cuida vem ao lado ("com Marina Almeida"). */
-const SELO: Record<Status, string> = { aberto: 'Aguardando atendimento', em_atendimento: 'Em atendimento', aguardando_cliente: 'Aguardando a sua resposta', resolvido: 'Resolvido, confirme', fechado: 'Fechado' }
+const SELO: Record<Status, string> = { aberto: 'Aguardando atendimento', em_atendimento: 'Em atendimento', aguardando_cliente: 'Aguardando sua resposta', resolvido: 'Resolvido, aguardando sua confirmação', fechado: 'Fechado' }
 const DIA: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' }
 
 export function MeusChamadosPage() {
@@ -57,7 +57,7 @@ export function MeusChamadosPage() {
             </div>
             {encerrados.length > 0 && (
               <section className={s.lista} aria-labelledby="t-encerrados">
-                <h2 id="t-encerrados" className={s.divisor}>Encerrados</h2>
+                <h2 id="t-encerrados" className={s.divisor}>Fechados</h2>
                 {encerrados.map((c) => cartao(c, porId.get(c.id)))}
               </section>
             )}
@@ -93,7 +93,7 @@ export function MeusChamadosPage() {
   }
 }
 
-const ROTULO_TOM: Record<Tom, string> = { atrasado: 'Atrasado', voce: 'Aguardando você', equipe: 'Com a equipe' }
+const ROTULO_TOM: Record<Tom, string> = { atrasado: 'Prazo estourado', voce: 'Aguardando você', equipe: 'Com a equipe' }
 
 function ProximoPasso({ tom, texto }: { tom: Tom; texto: string }) {
   return (

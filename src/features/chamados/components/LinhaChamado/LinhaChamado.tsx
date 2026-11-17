@@ -21,12 +21,12 @@ export const LinhaChamado = memo(function LinhaChamado({ chamado, agora, nomeCli
       </span>
       <span className={s.sub}>
         {respondeu && (
-          <span className={s.respondeu}>
+          <span className={s.respondeu} title="Última mensagem do chamado é do cliente">
             <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-            respondeu
+            mensagem do cliente
           </span>
         )}
-        {chamado.prioridade === 'critica' && <span className={s.critica}>crítica ·</span>}
+        {chamado.prioridade === 'critica' && <span className={s.critica}>Crítica ·</span>}
         <span className={s.cliente}>{nomeCliente}</span>
       </span>
       <Prazo chamado={chamado} agora={agora} faixa={faixa} />
@@ -36,7 +36,7 @@ export const LinhaChamado = memo(function LinhaChamado({ chamado, agora, nomeCli
 
 function Prazo({ chamado, agora, faixa }: { chamado: Chamado; agora: number; faixa: ReturnType<typeof faixaSla> }) {
   if (faixa === 'encerrado') return <span className={s.prazo}><span className={s.tempo}>{ROTULO_STATUS[chamado.status]}</span></span>
-  if (faixa === 'pausado') return <span className={s.prazo}><span className={s.tempo}>pausado</span><span className={s.tipo}>aguardando cliente</span></span>
+  if (faixa === 'pausado') return <span className={s.prazo}><span className={s.tempo}>SLA pausado</span><span className={s.tipo}>aguardando cliente</span></span>
   const { tipo, prazo } = prazoRelevante(chamado)
   const restante = restanteMs(chamado, agora)
   const inicio = Date.parse(chamado.aberto_em)
@@ -45,7 +45,7 @@ function Prazo({ chamado, agora, faixa }: { chamado: Chamado; agora: number; fai
     <span className={s.prazo}>
       <span className={s.tempo}>{restante < 0 ? 'há' : 'em'} {formatarDuracao(Math.abs(restante))}</span>
       <span className={s.barra} aria-hidden><i style={{ width: `${consumido.toFixed(0)}%` }} /></span>
-      <span className={s.tipo}>{restante < 0 ? 'venceu · ' : ''}{TIPO_CURTO[tipo]}</span>
+      <span className={s.tipo}>{restante < 0 ? 'estourou · ' : ''}{TIPO_CURTO[tipo]}</span>
     </span>
   )
 }

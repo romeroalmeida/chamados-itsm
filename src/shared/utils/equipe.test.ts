@@ -36,6 +36,7 @@ describe('agregadosPorConsultor', () => {
     const ag = agregadosPorConsultor(consultores, DADOS.chamados, DADOS.historico, AGORA_MS)
     const marina = ag.find((a) => a.consultor.id === MARINA.id)!
     expect(marina.ativos).toBe(42)
+    expect(marina.emAtendimento + marina.aguardandoCliente).toBe(42)
     expect(marina.vencidos + marina.vencendo4h).toBeLessThanOrEqual(42)
     expect(ag[0]!.vencidos).toBeGreaterThanOrEqual(ag[1]!.vencidos)
     expect(RICARDO.perfil).toBe('gestor')
@@ -54,7 +55,7 @@ describe('sugerirDestino', () => {
     expect(s.consultor.grupo_id).toBe(thiago.consultor.grupo_id)
   })
   it('empate em ativos desempata por mais ocioso; ninguém com menos ativos = sem sugestão', () => {
-    const a = (id: string, ativos: number, ociosoMs: number, grupo = 'g'): AgregadoConsultor => ({ consultor: { ...consultor, id, grupo_id: grupo }, ativos, vencidos: 0, vencendo4h: 0, pausados: 0, ociosoMs })
+    const a = (id: string, ativos: number, ociosoMs: number, grupo = 'g'): AgregadoConsultor => ({ consultor: { ...consultor, id, grupo_id: grupo }, ativos, emAtendimento: ativos, aguardandoCliente: 0, vencidos: 0, vencendo4h: 0, pausados: 0, ociosoMs })
     const origem = a('o', 30, 0)
     expect(sugerirDestino(origem, [origem, a('x', 5, H), a('y', 5, 3 * H), a('z', 1, 0, 'outro')])!.consultor.id).toBe('y')
     expect(sugerirDestino(origem, [origem, a('w', 30, DIA)])).toBeNull()

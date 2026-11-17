@@ -15,7 +15,7 @@ const trecho = (t: string, max = 80) => (t.length > max ? `${t.slice(0, max).tri
 /**
  * O próximo passo do chamado, em linguagem de cliente, e de quem ele é:
  * "voce" (resolvido para confirmar, ou a equipe pediu informação), "equipe" (ela já falou por último, ou está no prazo)
- * ou "atrasado" (passou da previsão e ainda depende da equipe). Fechado não tem próximo passo.
+ * ou "atrasado" (passou do prazo e ainda depende da equipe). Fechado não tem próximo passo.
  */
 export function proximoPasso({ chamado: c, mensagens, historico }: DetalheCliente, usuarioId: string, agoraMs: number, nomes: Record<string, string>, fuso: Fuso): ProximoPasso | null {
   const resp = primeiroNome(c.responsavel_id ? nomes[c.responsavel_id] : undefined) ?? 'A equipe'
@@ -37,12 +37,12 @@ export function proximoPasso({ chamado: c, mensagens, historico }: DetalheClient
   if (Date.parse(prazo) < agoraMs) {
     const quando = formatarDataHora(prazo, fuso)
     return c.status === 'aberto'
-      ? { tom: 'atrasado', texto: `Ninguém pegou ainda e já passou da previsão (${quando}). Está em atraso; estamos cuidando.` }
-      : { tom: 'atrasado', texto: `${resp} está cuidando, mas já passou da previsão de ${TIPO_PRAZO[tipo]} (${quando}).` }
+      ? { tom: 'atrasado', texto: `Ninguém pegou ainda e já passou do prazo de ${TIPO_PRAZO[tipo]} (${quando}). Estamos cuidando.` }
+      : { tom: 'atrasado', texto: `${resp} está cuidando, mas já passou do prazo de ${TIPO_PRAZO[tipo]} (${quando}).` }
   }
   return c.status === 'aberto'
-    ? { tom: 'equipe', texto: `Aguardando alguém da equipe pegar. Previsão de resposta até ${formatarDiaHora(prazo, fuso)}.` }
-    : { tom: 'equipe', texto: `${resp} está cuidando. Previsão de ${TIPO_PRAZO[tipo]} até ${formatarDiaHora(prazo, fuso)}.` }
+    ? { tom: 'equipe', texto: `Aguardando alguém da equipe pegar. Prazo de ${TIPO_PRAZO[tipo]} até ${formatarDiaHora(prazo, fuso)}.` }
+    : { tom: 'equipe', texto: `${resp} está cuidando. Prazo de ${TIPO_PRAZO[tipo]} até ${formatarDiaHora(prazo, fuso)}.` }
 }
 
 export interface Novidade { id: string; em: string; chamado: Chamado; texto: string; alerta?: boolean }
@@ -60,7 +60,7 @@ export function novidadesDesde(itens: DetalheCliente[], ultimaMs: number, usuari
           : h.para === 'em_atendimento' ? `${quem} retomou o atendimento`
             : h.para === 'aguardando_cliente' ? `${quem} pediu mais informações`
               : h.para === 'resolvido' ? `${quem} marcou como resolvido`
-                : h.para === 'fechado' ? 'O chamado foi encerrado' : null
+                : h.para === 'fechado' ? 'O chamado foi fechado' : null
       if (texto) r.push({ id: h.id, em: h.ocorrido_em, chamado: c, texto })
     }
     // várias mensagens da mesma pessoa viram uma frase só, na hora da última
@@ -73,7 +73,7 @@ export function novidadesDesde(itens: DetalheCliente[], ultimaMs: number, usuari
     const { prazo } = prazoRelevante(c)
     const t = Date.parse(prazo)
     if ((c.status === 'aberto' || c.status === 'em_atendimento') && t > ultimaMs && t <= agoraMs) {
-      r.push({ id: `prazo:${c.id}`, em: prazo, chamado: c, alerta: true, texto: c.status === 'aberto' ? 'Continua sem resposta e passou do previsto' : 'Passou do previsto e ainda está em atendimento' })
+      r.push({ id: `prazo:${c.id}`, em: prazo, chamado: c, alerta: true, texto: c.status === 'aberto' ? 'Continua sem resposta e passou do prazo' : 'Passou do prazo e ainda está em atendimento' })
     }
   }
   return r.sort((a, b) => a.em.localeCompare(b.em))
@@ -93,7 +93,7 @@ export function linhaDoTempoCliente(c: Chamado, historico: Historico[], usuarioI
         : h.para === 'em_atendimento' ? (eu ? 'Você respondeu e o atendimento seguiu' : `${quem} retomou o atendimento`)
           : h.para === 'aguardando_cliente' ? `${quem} pediu mais informações`
             : h.para === 'resolvido' ? `${quem} marcou como resolvido`
-              : eu ? 'Você confirmou que resolveu' : `${quem} encerrou o chamado`
+              : eu ? 'Você confirmou que resolveu' : `${quem} fechou o chamado`
     r.push({ id: h.id, em: h.ocorrido_em, texto })
   }
   return r.sort((a, b) => a.em.localeCompare(b.em))

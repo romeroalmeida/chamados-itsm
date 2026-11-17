@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 import { EMAILS, entrar } from './helpers'
 
-test('Marina pega um chamado sem dono e ele passa para Meus, em atendimento', async ({ page }) => {
+test('Marina pega um chamado da fila do grupo e ele passa para Meus, em atendimento', async ({ page }) => {
   await entrar(page, EMAILS.marina)
-  await page.getByRole('tab', { name: /Do grupo, sem dono/ }).click()
+  await page.getByRole('tab', { name: /Fila do grupo/ }).click()
 
   const lista = page.getByRole('list', { name: 'Chamados' })
   const primeiraLinha = lista.getByRole('button').first()

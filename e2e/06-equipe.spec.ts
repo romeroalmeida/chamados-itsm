@@ -1,22 +1,24 @@
 import { expect, test } from '@playwright/test'
 import { EMAILS, entrar } from './helpers'
 
-function ativosDoLabel(label: string | null): number {
-  return Number(label?.match(/,\s*(\d+)\s*ativos/)?.[1] ?? NaN)
+function chamadosDoLabel(label: string | null): number {
+  // em atendimento + aguardando cliente, os dois números do cartão
+  const m = label?.match(/,\s*(\d+) em atendimento,\s*(\d+) aguardando cliente/)
+  return m ? Number(m[1]) + Number(m[2]) : NaN
 }
 
 test('Ricardo vê os 12 consultores, as seções da equipe e redistribui um chamado', async ({ page }) => {
   await entrar(page, EMAILS.ricardo)
   await expect(page).toHaveURL(/\/equipe$/)
 
-  const cartoes = page.getByRole('button', { name: /ativos$/ })
+  const cartoes = page.getByRole('button', { name: /aguardando cliente$/ })
   await expect(cartoes).toHaveCount(12)
 
-  await expect(page.getByRole('heading', { name: /Vencendo nas próximas 4 horas/ })).toBeVisible()
-  await expect(page.getByRole('heading', { name: /Fila sem dono/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Estouram o SLA nas próximas 4 horas/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Fila do grupo que ninguém pegou/ })).toBeVisible()
 
   const cartaoMarina = page.getByRole('button', { name: /^Marina Almeida,/ })
-  const antes = ativosDoLabel(await cartaoMarina.getAttribute('aria-label'))
+  const antes = chamadosDoLabel(await cartaoMarina.getAttribute('aria-label'))
   expect(antes).toBeGreaterThan(0)
   await cartaoMarina.click()
 
@@ -34,7 +36,7 @@ test('Ricardo vê os 12 consultores, as seções da equipe e redistribui um cham
   await page.getByRole('button', { name: /^Redistribuir \d/ }).click()
   await expect(painel).not.toBeVisible()
 
-  await expect.poll(async () => ativosDoLabel(await cartaoMarina.getAttribute('aria-label'))).toBe(antes - 1)
+  await expect.poll(async () => chamadosDoLabel(await cartaoMarina.getAttribute('aria-label'))).toBe(antes - 1)
 
   const cartaoDestino = page.getByRole('button', { name: new RegExp(`^${nomeDestino},`) })
   await expect(cartaoDestino).toBeVisible()

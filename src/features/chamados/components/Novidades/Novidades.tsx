@@ -16,7 +16,7 @@ export function Novidades({ itens, usuario, nomes, agora, onAbrir }: Props) {
   return (
     <section aria-labelledby="t-novidades" className={s.painel}>
       <div className={s.topo}>
-        <h2 id="t-novidades" className={s.titulo}>Desde a sua última visita</h2>
+        <h2 id="t-novidades" className={s.titulo}>Novidades desde a sua última visita</h2>
         <span className={s.visita}>visita em {formatarDataHora(new Date(ultima).toISOString(), usuario)}</span>
         <Button pequeno className={s.entendi} onClick={() => marcar(agora)}>Entendi</Button>
       </div>

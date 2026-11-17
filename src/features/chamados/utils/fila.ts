@@ -21,12 +21,13 @@ export function filtrarFila(chamados: Chamado[], usuario: Usuario, f: FiltroFila
 
 export type GrupoUrgencia = 'vencidos' | 'proxima_hora' | 'hoje' | 'depois' | 'pausados' | 'encerrados'
 export const GRUPOS_URGENCIA: ReadonlyArray<{ id: GrupoUrgencia; rotulo: string; dica?: string }> = [
-  { id: 'vencidos', rotulo: 'Vencidos', dica: 'mais antigo primeiro' },
-  { id: 'proxima_hora', rotulo: 'Próxima hora' },
-  { id: 'hoje', rotulo: 'Hoje', dica: 'até 23:59' },
-  { id: 'depois', rotulo: 'Depois' },
-  { id: 'pausados', rotulo: 'Pausados', dica: 'aguardando o cliente' },
-  { id: 'encerrados', rotulo: 'Encerrados' },
+  // rótulos com o vocabulário do enunciado ("estourar o prazo") e do dados.json (sla_pausado, status); ver docs/decisoes.md, Vocabulário da tela
+  { id: 'vencidos', rotulo: 'Prazo estourado', dica: 'mais antigo primeiro' },
+  { id: 'proxima_hora', rotulo: 'Estoura na próxima hora' },
+  { id: 'hoje', rotulo: 'Estoura hoje', dica: 'até 23:59' },
+  { id: 'depois', rotulo: 'Estoura depois de hoje' },
+  { id: 'pausados', rotulo: 'SLA pausado', dica: 'aguardando cliente' },
+  { id: 'encerrados', rotulo: 'Resolvido ou fechado' },
 ]
 
 const DIA = 86_400_000
@@ -62,7 +63,7 @@ export function agruparPorUrgencia(lista: Chamado[], agoraMs: number, zoneinfo: 
   return GRUPOS_URGENCIA.map((g) => ({ id: g.id, chamados: grupos.get(g.id)! }))
 }
 
-/** "Respondeu": a última mensagem que o cliente vê (não interna) é do próprio cliente. */
+/** "Última mensagem do cliente": a última mensagem que o cliente vê (não interna) é do próprio cliente. */
 export function clienteRespondeu(c: Chamado, ultima: UltimaMensagem | undefined): boolean {
   return ultima !== undefined && ultima.autor_id === c.solicitante_id
 }

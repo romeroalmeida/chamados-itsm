@@ -14,8 +14,8 @@ import { useAlertaSla } from '../../hooks/useAlertaSla'
 import { agruparPorUrgencia, clienteRespondeu, filtrarFila, GRUPOS_URGENCIA, type AbaFila, type FiltroFila, type FiltroStatus, type GrupoUrgencia, type OrdemFila } from '../../utils/fila'
 import s from './FilaConsultorPage.module.css'
 
-const OPCOES_STATUS = [{ valor: 'ativos', rotulo: 'Ativos' }, { valor: 'todos', rotulo: 'Todos' }, { valor: 'aberto', rotulo: 'Aberto' }, { valor: 'em_atendimento', rotulo: 'Em atendimento' }, { valor: 'aguardando_cliente', rotulo: 'Aguardando cliente' }, { valor: 'resolvido', rotulo: 'Resolvido' }, { valor: 'fechado', rotulo: 'Fechado' }]
-const OPCOES_ORDEM = [{ valor: 'estoura', rotulo: 'Estoura primeiro' }, { valor: 'recente', rotulo: 'Mais recente' }, { valor: 'cliente', rotulo: 'Cliente' }]
+const OPCOES_STATUS = [{ valor: 'ativos', rotulo: 'Exceto resolvido e fechado' }, { valor: 'todos', rotulo: 'Todos' }, { valor: 'aberto', rotulo: 'Aberto' }, { valor: 'em_atendimento', rotulo: 'Em atendimento' }, { valor: 'aguardando_cliente', rotulo: 'Aguardando cliente' }, { valor: 'resolvido', rotulo: 'Resolvido' }, { valor: 'fechado', rotulo: 'Fechado' }]
+const OPCOES_ORDEM = [{ valor: 'estoura', rotulo: 'Estoura primeiro' }, { valor: 'recente', rotulo: 'Atualizado por último' }, { valor: 'cliente', rotulo: 'Cliente' }]
 /** Os quatro contadores do topo: os grupos com prazo correndo. */
 const SALTOS: GrupoUrgencia[] = ['vencidos', 'proxima_hora', 'hoje', 'depois']
 
@@ -37,7 +37,7 @@ export function FilaConsultorPage() {
   const semDono = useMemo(() => todos.filter((c) => c.status === 'aberto' && c.responsavel_id === null), [todos])
 
   const alertar = useCallback((c: Chamado, faixa: Faixa) => {
-    notificar({ id: `sla:${c.id}:${faixa}`, tipo: 'alerta', titulo: `#${c.numero} ${faixa === 'vencido' ? 'venceu' : 'vence em breve'}`, descricao: `${c.titulo} · ${formatarRelativo(restanteMs(c, agora))}`, acao: { rotulo: 'Abrir', onClick: () => nav(`/fila/${c.id}`) }, duracaoMs: 15_000 })
+    notificar({ id: `sla:${c.id}:${faixa}`, tipo: 'alerta', titulo: `#${c.numero} ${faixa === 'vencido' ? 'estourou o prazo' : 'está prestes a estourar o prazo'}`, descricao: `${c.titulo} · ${formatarRelativo(restanteMs(c, agora))}`, acao: { rotulo: 'Abrir', onClick: () => nav(`/fila/${c.id}`) }, duracaoMs: 15_000 })
   }, [notificar, nav, agora])
   const resumo = useAlertaSla(meus, agora, alertar)
 
@@ -80,7 +80,7 @@ export function FilaConsultorPage() {
       <div className={s.vazio}>
         <span className={s.vazioIcone}><IconeBusca /></span>
         <strong>Nada com “{termo}” {filtro.aba === 'meus' ? `nos seus ${meus.length}` : 'na fila do grupo'}</strong>
-        <p>A busca olha número, título e cliente.{filtro.aba === 'meus' ? ' Pode estar na fila do grupo, sem dono.' : ''}</p>
+        <p>A busca olha número, título e cliente.{filtro.aba === 'meus' ? ' Pode estar na fila do grupo, que ninguém pegou ainda.' : ''}</p>
         <button type="button" className={s.limpar} onClick={limparBusca}>Limpar busca</button>
       </div>
     )
@@ -90,8 +90,8 @@ export function FilaConsultorPage() {
     <div className={`${s.pagina} ${id ? s.comChamado : ''}`}>
       <section className={`${s.fila} ${id ? s.comDetalhe : ''}`} aria-label="Fila">
         <div className={s.cabeca}>
-          <Tabs variante="cheio" ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Do grupo, sem dono', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => setFiltro((f) => ({ ...f, aba: v as AbaFila }))}>
-            <div className={s.saltos} role="group" aria-label="Ir para o grupo">
+          <Tabs variante="cheio" ariaLabel="Filas" abas={[{ valor: 'meus', rotulo: 'Meus', contador: meus.length }, { valor: 'sem_dono', rotulo: 'Fila do grupo', contador: semDono.length }]} valor={filtro.aba} onChange={(v) => setFiltro((f) => ({ ...f, aba: v as AbaFila }))}>
+            <div className={s.saltos} role="group" aria-label="Ir para o prazo">
               {SALTOS.map((g) => {
                 const grupo = grupos.find((x) => x.id === g)!
                 return (

@@ -35,8 +35,8 @@ function Icone({ nome, className }: { nome: keyof typeof ICONES; className?: str
 
 const BENEFICIOS = [
   { icone: 'conversa', titulo: 'Acompanhe sem jargão', texto: 'Saiba quem está cuidando e quando terá resposta, no seu fuso.' },
-  { icone: 'prazo', titulo: 'O que estoura primeiro, no topo', texto: 'Fila ordenada pelo prazo e aviso antes de vencer.' },
-  { icone: 'equipe', titulo: 'A equipe num relance', texto: 'Quem está sobrecarregado, quem está livre e o que vence nas próximas horas.' },
+  { icone: 'prazo', titulo: 'O que estoura primeiro, no topo', texto: 'Fila ordenada pelo prazo e aviso antes de estourar.' },
+  { icone: 'equipe', titulo: 'A equipe num relance', texto: 'Quem está sobrecarregado, quem está sem nada e o que vai estourar o SLA nas próximas horas.' },
 ] as const
 
 // Login em dois passos, no padrão do escalanova: e-mail, depois o código de 6 números "mandado" para ele.

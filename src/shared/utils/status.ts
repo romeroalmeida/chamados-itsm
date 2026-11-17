@@ -1,4 +1,4 @@
-import type { Perfil, Status } from '@/shared/types'
+import type { Perfil, Prioridade, Status } from '@/shared/types'
 
 interface Transicao {
   de: Status
@@ -49,6 +49,8 @@ export const ROTULO_STATUS: Record<Status, string> = {
   resolvido: 'Resolvido',
   fechado: 'Fechado',
 }
+
+export const ROTULO_PRIORIDADE: Record<Prioridade, string> = { baixa: 'Baixa', media: 'Média', alta: 'Alta', critica: 'Crítica' }
 
 /** Linguagem do cliente (spec §5.3). `{nome}` é substituído pelo responsável. */
 export const ROTULO_STATUS_CLIENTE: Record<Status, string> = {

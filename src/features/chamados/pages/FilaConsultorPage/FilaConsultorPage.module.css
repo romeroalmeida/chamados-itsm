@@ -4,7 +4,7 @@
 .cabeca > div { display: grid; gap: 12px; }
 
 .saltos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-.salto { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--cor-borda); border-radius: 12px; background: var(--cor-superficie); text-align: left; transition: border-color var(--transicao), background var(--transicao); }
+.salto { display: grid; align-content: start; gap: 2px; padding: 8px 10px; border: 1px solid var(--cor-borda); border-radius: 12px; background: var(--cor-superficie); text-align: left; transition: border-color var(--transicao), background var(--transicao); }
 .salto:hover:not(:disabled) { border-color: var(--cor-borda-forte); background: #fafbfc; }
 .salto:disabled { cursor: default; }
 .salto b { font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600; line-height: 1.1; }

@@ -19,5 +19,5 @@ export function formatarDuracao(ms: number): string {
 }
 
 export function formatarRelativo(restanteMs: number): string {
-  return restanteMs >= 0 ? `vence em ${formatarDuracao(restanteMs)}` : `venceu há ${formatarDuracao(-restanteMs)}`
+  return restanteMs >= 0 ? `estoura em ${formatarDuracao(restanteMs)}` : `estourou há ${formatarDuracao(-restanteMs)}`
 }

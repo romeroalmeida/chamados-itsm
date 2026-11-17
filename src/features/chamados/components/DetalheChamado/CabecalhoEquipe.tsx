@@ -2,12 +2,11 @@ import type { ReactNode } from 'react'
 import type { Chamado, Mensagem, Usuario } from '@/shared/types'
 import { formatarDataHora, formatarDuracao } from '@/shared/utils/datas'
 import { faixaSla, prazoRelevante, restanteMs, TIPO_PRAZO } from '@/shared/utils/sla'
+import { ROTULO_PRIORIDADE } from '@/shared/utils/status'
 import { Passos, PASSOS_EQUIPE } from './Passos'
 import s from './detalhe.module.css'
 
 interface Props { chamado: Chamado; usuario: Usuario; usuarios: Record<string, Usuario>; agora: number; reabertoEm?: string; categoria?: string; ultimaDoCliente?: Mensagem; acoes: ReactNode }
-
-const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 
 /** Cabeçalho do chamado para a equipe: título e ações, meta, stepper de status, faixa de prazo e dica de contexto. */
 export function CabecalhoEquipe({ chamado, usuario, usuarios, agora, reabertoEm, categoria, ultimaDoCliente, acoes }: Props) {
@@ -24,16 +23,16 @@ export function CabecalhoEquipe({ chamado, usuario, usuarios, agora, reabertoEm,
       </div>
       <div className={s.meta}>
         <span>Cliente <b>{solicitante?.nome}</b>{solicitante?.perfil === 'cliente' && ` · ${solicitante.empresa}`}</span>
-        {categoria && <span>{categoria} · prioridade {chamado.prioridade}</span>}
+        {categoria && <span>{categoria} · prioridade <b>{ROTULO_PRIORIDADE[chamado.prioridade]}</b></span>}
         <span>Aberto em <b className={s.mono}>{formatarDataHora(chamado.aberto_em, usuario)}</b></span>
-        <span>Responsável <b>{responsavel?.nome ?? 'sem dono'}</b></span>
+        <span>Responsável <b>{responsavel?.nome ?? 'sem responsável'}</b></span>
       </div>
       <Passos passos={PASSOS_EQUIPE} status={chamado.status} nota={reabertoEm ? `reaberto ${formatarDataHora(reabertoEm, usuario)}` : undefined} />
       <FaixaPrazo chamado={chamado} usuario={usuario} agora={agora} />
       {ultimaDoCliente && faixaSla(chamado, agora) !== 'encerrado' && (
         <div className={s.dica}>
           <IconeConversa />
-          <span>{solicitante?.nome.split(' ')[0] ?? 'O cliente'} respondeu por último: <q>{ultimaDoCliente.texto.length > 140 ? `${ultimaDoCliente.texto.slice(0, 140)}…` : ultimaDoCliente.texto}</q> <span className={s.mono}>({formatarDataHora(ultimaDoCliente.criada_em, usuario)})</span></span>
+          <span>Última mensagem do cliente: <q>{ultimaDoCliente.texto.length > 140 ? `${ultimaDoCliente.texto.slice(0, 140)}…` : ultimaDoCliente.texto}</q> <span className={s.mono}>({formatarDataHora(ultimaDoCliente.criada_em, usuario)})</span></span>
         </div>
       )}
     </header>
@@ -48,8 +47,8 @@ function FaixaPrazo({ chamado, usuario, agora }: { chamado: Chamado; usuario: Us
   if (faixa === 'pausado') {
     return (
       <div className={`${s.faixaPrazo} ${s.pausado}`} role="status">
-        <IconePrazo /><strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>Prazo pausado enquanto aguarda o cliente</strong>
-        <span>{TIPO_PRAZO[tipo]} até <span className={s.mono}>{quando}</span>, sem extensão pela pausa</span>
+        <IconePrazo /><strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>SLA pausado: aguardando cliente</strong>
+        <span>prazo de {TIPO_PRAZO[tipo]} <span className={s.mono}>{quando}</span>, sem extensão pela pausa</span>
       </div>
     )
   }
@@ -59,10 +58,10 @@ function FaixaPrazo({ chamado, usuario, agora }: { chamado: Chamado; usuario: Us
   return (
     <div className={`${s.faixaPrazo} ${s[faixa]}`} role="status">
       <IconePrazo />
-      <strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>{maiuscula(TIPO_PRAZO[tipo])} {restante < 0 ? `venceu há ${formatarDuracao(-restante)}` : `vence em ${formatarDuracao(restante)}`}</strong>
+      <strong title={`Prazo de ${TIPO_PRAZO[tipo]}`}>Prazo de {TIPO_PRAZO[tipo]} {restante < 0 ? `estourou há ${formatarDuracao(-restante)}` : `estoura em ${formatarDuracao(restante)}`}</strong>
       <span>
         {restante < 0 ? 'prazo era ' : 'prazo '}<span className={s.mono}>{quando}</span>
-        {primeiraAtrasada && <> · 1ª resposta também saiu atrasada (<span className={s.mono}>{formatarDataHora(chamado.primeira_resposta_em!, usuario)}</span>)</>}
+        {primeiraAtrasada && <> · primeira resposta em <span className={s.mono}>{formatarDataHora(chamado.primeira_resposta_em!, usuario)}</span>, depois do prazo</>}
       </span>
     </div>
   )

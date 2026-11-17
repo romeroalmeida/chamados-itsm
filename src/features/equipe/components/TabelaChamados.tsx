@@ -4,6 +4,7 @@ import { useAtribuir } from '@/api/queries'
 import { Select, useToast } from '@/shared/components'
 import { formatarDuracao } from '@/shared/utils/datas'
 import { faixaSla, restanteMs } from '@/shared/utils/sla'
+import { ROTULO_PRIORIDADE } from '@/shared/utils/status'
 import s from './equipe.module.css'
 
 const LIMITE = 8
@@ -29,7 +30,7 @@ export function TabelaChamados({ id, titulo, chamados, tipo, consultores, usuari
       </div>
       {chamados.length === 0 ? <p className={s.vazio}>{vazio}</p> : (
         <table className={s.tabela}>
-          <thead><tr><th>{tipo === 'vencendo' ? 'Restam' : 'Prazo'}</th><th>Chamado</th><th>{tipo === 'vencendo' ? 'Responsável' : 'Grupo'}</th><th><span className={s.sr}>Ação</span></th></tr></thead>
+          <thead><tr><th>{tipo === 'vencendo' ? 'Estoura em' : 'Prazo'}</th><th>Chamado</th><th>{tipo === 'vencendo' ? 'Responsável' : 'Grupo'}</th><th><span className={s.sr}>Ação</span></th></tr></thead>
           <tbody>
             {visiveis.map((c) => {
               const r = restanteMs(c, agora)
@@ -40,9 +41,9 @@ export function TabelaChamados({ id, titulo, chamados, tipo, consultores, usuari
                   <td><span className={`${s.tempo} ${s[faixaSla(c, agora)]}`}>{r < 0 ? `há ${formatarDuracao(-r)}` : formatarDuracao(r)}</span></td>
                   <td>
                     <button type="button" className={s.linkTitulo} onClick={() => onAbrir(c.id)}>{c.titulo}</button>
-                    <span className={s.sub}><span className={s.num}>#{c.numero}</span> · {empresa(c)}{c.prioridade === 'critica' && <> · <b className={s.critica}>crítica</b></>}</span>
+                    <span className={s.sub}><span className={s.num}>#{c.numero}</span> · {empresa(c)}{c.prioridade === 'critica' && <> · <b className={s.critica}>{ROTULO_PRIORIDADE.critica}</b></>}</span>
                   </td>
-                  <td>{tipo === 'semDono' ? nomeGrupo(c.grupo_id) : resp ?? <span className={s.semDono}>sem dono</span>}</td>
+                  <td>{tipo === 'semDono' ? nomeGrupo(c.grupo_id) : resp ?? <span className={s.semDono}>sem responsável</span>}</td>
                   <td>
                     <Select className={s.selectAcao} ariaLabel={`${resp ? 'Reatribuir' : 'Atribuir'} #${c.numero}`} valor={undefined} placeholder={resp ? 'Reatribuir' : 'Atribuir'} opcoes={opcoes}
                       onChange={(consultorId) => atribuir.mutate({ chamadoId: c.id, consultorId }, { onError: (e) => notificar({ titulo: 'Não atribuído', descricao: e.message, tipo: 'erro' }) })} />
