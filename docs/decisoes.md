@@ -30,7 +30,7 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Por quê.** Foco, teclado e ARIA de diálogo e select são fáceis de errar. O Radix resolve isso sem impor visual.
 
-**Onde no código.** `src/shared/components/Dialog.tsx`, `Select.tsx`, `Tabs.tsx`, `Toast.tsx`.
+**Onde no código.** `src/shared/components/Dialog/Dialog.tsx`, `Select/Select.tsx`, `Tabs/Tabs.tsx`, `Toast/Toast.tsx`.
 
 ## Login com e-mail e código
 
@@ -40,7 +40,7 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Por quê.** O avaliador precisa trocar de perfil sem ler código. Um login de verdade, mesmo fake, exercita sessão, guarda de rota e o cabeçalho `X-Usuario-Id` que o servidor usa para permissão. Qualquer usuário do arquivo entra.
 
-**Onde no código.** `src/features/auth/pages/LoginPage/LoginPage.tsx`, `src/features/auth/components/CampoCodigo/CampoCodigo.tsx`, `src/features/auth/services/entrar.ts`, `src/mock-server/handlers.ts` (`CODIGO_DEMO`), `src/app/routes/RotaProtegida.tsx`.
+**Onde no código.** `src/features/auth/pages/LoginPage/LoginPage.tsx`, `src/features/auth/components/CampoCodigo/CampoCodigo.tsx`, `src/features/auth/services/entrar.ts`, `src/shared/utils/demo.ts` (`CODIGO_DEMO`), `src/mock-server/handlers.ts`, `src/app/routes/RotaProtegida.tsx`.
 
 ## Tempo real
 
@@ -50,7 +50,7 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Por quê.** Só multi-aba deixa a tela parada quando o avaliador abre uma aba. Só simulador não mostra a conversa entre duas pessoas. O lock evita que cada aba aberta multiplique a atividade. A duplicação existe porque o enunciado diz que um evento pode chegar mais de uma vez, e o dedupe precisa ser visto funcionando. Sem `BroadcastChannel`, o bus escuta o evento `storage`. Sem Web Locks, toda aba simula e o rodapé avisa.
 
-**Onde no código.** `src/mock-server/bus.ts`, `src/mock-server/simulator.ts`, `src/mock-server/index.ts` (`deveDuplicar`), `src/app/layout/PainelSimulador.tsx`.
+**Onde no código.** `src/mock-server/bus.ts`, `src/mock-server/simulator.ts`, `src/mock-server/index.ts` (`deveDuplicar`), `src/app/layout/PainelSimulador/PainelSimulador.tsx`.
 
 ## Relógio virtual e velocidade
 
@@ -100,7 +100,7 @@ Uma entrada por decisão. Formato: decisão, alternativas, por quê, onde no có
 
 **Por quê.** Um endpoint agregado precisaria ser invalidado a cada evento. Calculando no cliente, os números mudam sozinhos quando o cache recebe um evento. O volume (620 chamados) cabe em `useMemo`.
 
-**Onde no código.** `src/shared/utils/equipe.ts`, `src/features/equipe/pages/EquipePage.tsx`.
+**Onde no código.** `src/shared/utils/equipe.ts`, `src/features/equipe/pages/EquipePage/EquipePage.tsx`.
 
 ## Datas com `Intl` e `zoneinfo`
 
@@ -162,7 +162,7 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 
 **Por quê.** O arquivo faz assim: o chamado reaberto mantém os prazos e as datas antigas. Recriar prazo seria uma regra de negócio inventada.
 
-**Onde no código.** `src/shared/utils/reducer.ts` (`status.alterado` não toca prazos), `src/features/chamados/components/CabecalhoChamado.tsx`.
+**Onde no código.** `src/shared/utils/reducer.ts` (`status.alterado` não toca prazos), `src/features/chamados/components/DetalheChamado/CabecalhoEquipe.tsx`.
 
 ## Pausa não estende prazo
 
@@ -192,7 +192,7 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 
 **Por quê.** O enunciado diz que a Helena às vezes abre chamado repetido. O arquivo tem o caso: #10614 "VPN não liga a partir de casa (outra vez)", com #10612 fechado. Palavras em comum acham esse caso e são fáceis de explicar. Uma sugestão só não vira ruído.
 
-**Onde no código.** `src/shared/utils/similaridade.ts`, `src/features/chamados/pages/NovoChamadoPage.tsx`.
+**Onde no código.** `src/shared/utils/similaridade.ts`, `src/features/chamados/pages/NovoChamadoPage/NovoChamadoPage.tsx`.
 
 ## Tempo sem chamado atribuído, por histórico
 
@@ -262,7 +262,7 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 
 **Por quê.** O avaliador lê a tela com o `dados.json` e o enunciado ao lado. Se um rótulo não aparece em nenhum dos dois, ele precisa adivinhar o que conta. "Ativos", por exemplo, somava `em_atendimento` e `aguardando_cliente`; agora a tela mostra os dois números separados, com os nomes dos status.
 
-**Onde no código.** `src/shared/utils/status.ts` (`ROTULO_STATUS`, `ROTULO_PRIORIDADE`, `ROTULO_ACAO`), `src/shared/utils/sla.ts` (`TIPO_PRAZO`), `src/features/chamados/utils/fila.ts` (`GRUPOS_URGENCIA`), `src/features/chamados/components/DetalheChamado/Passos.tsx`, `src/features/equipe/components/CartaoConsultor.tsx`.
+**Onde no código.** `src/shared/utils/status.ts` (`ROTULO_STATUS`, `ROTULO_STATUS_CLIENTE`, `ROTULO_PRIORIDADE`, `ROTULO_ACAO`), `src/shared/utils/sla.ts` (`TIPO_PRAZO`), `src/features/chamados/utils/fila.ts` (`GRUPOS_URGENCIA`), `src/features/chamados/components/DetalheChamado/Passos.tsx`, `src/features/equipe/components/CartaoConsultor.tsx`.
 
 ### Status, prioridade e campos
 
@@ -293,9 +293,11 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 | Pegar para atender | igual | enunciado: "Pegar um chamado para atender" |
 | Atribuir, Reatribuir, Atribuir a… | igual | `historico.tipo: atribuicao`; evento `chamado.atribuido` |
 | Redistribuir, Redistribuir para… | igual | enunciado: "Redistribui chamados quando alguém falta" |
+| Selecione chamados de um mesmo grupo (dica da redistribuição) | — | `grupo_id` do chamado; o `/atribuir` só aceita consultor do grupo do chamado |
 | Mudar status | igual | enunciado: "Mudar o status de um chamado" |
 | Aguardar cliente, Retomar atendimento, Marcar como resolvido, Fechar | igual | transições para `aguardando_cliente`, `em_atendimento`, `resolvido`, `fechado` |
 | Status (rótulo acessível do stepper) | Situação | campo `status` |
+| Chamado #N resolvido, Chamado #N fechado (toast de sucesso) | — | `numero`; `status: resolvido` / `status: fechado` |
 
 ### Prazo e SLA
 
@@ -309,6 +311,9 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 | aguardando cliente (dica do grupo SLA pausado) | aguardando o cliente | `status: aguardando_cliente` |
 | Resolvido ou fechado (grupo da fila) | Encerrados | `status: resolvido` e `status: fechado` |
 | Resolvido / Fechado (selo de prazo de chamado encerrado) | encerrado | `status` |
+| Resolvido em {data}, Fechado em {data} (faixa verde do chamado encerrado) | — | `resolvido_em` / `fechado_em` |
+| dentro do prazo de resolução, prazo de resolução era {data} (faixa verde) | — | `resolvido_em` comparado a `prazo_resolucao` |
+| mais antigo primeiro (dica do grupo Prazo estourado, só na ordenação Estoura primeiro) | — | `prazo_primeira_resposta` / `prazo_resolucao` em ordem crescente |
 | Estoura primeiro (ordenação) | igual | enunciado: "o chamado que está prestes a estourar o prazo" |
 | em 2h / há 3h, com estourou · 1ª resposta ou resolução (linha da fila) | venceu · 1ª resposta | `prazo_primeira_resposta`, `prazo_resolucao`; enunciado: "estourar o prazo" |
 | Prazo de primeira resposta / Prazo de resolução estoura em X, estourou há X (faixa do chamado) | Primeira resposta vence em X, venceu há X | `prazo_primeira_resposta`, `prazo_resolucao`; enunciado: "estourar o prazo" |
@@ -371,3 +376,4 @@ Para a equipe (consultor e gestor), o diálogo de "Mudar status" não pede motiv
 | O que aconteceu até agora | igual | enunciado: "entender o que aconteceu sem ter que ler tudo de novo" |
 | O que parou? (opções com nome amigável, uma por categoria) | igual | entidade `categorias` (cada opção aponta para um `categoria_id`); enunciado: "Não sabe o que é categoria" |
 | Ainda não resolveu, Resolvido? Confirmar | igual | transições `resolvido` para `em_atendimento` e para `fechado` |
+| Não foi possível carregar o andamento de alguns chamados. (aviso quando o detalhe falha) | — | enunciado: "entender o que aconteceu"; o andamento é o `historico` do detalhe |
