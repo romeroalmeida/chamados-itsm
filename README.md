@@ -56,7 +56,7 @@ O login é fake e tem dois passos: o e-mail, depois um código de 6 números. Ne
 
 ## Arquitetura do front
 
-Esta é a parte que mais importa na entrega. Cada tópico diz o que é, por que foi assim e onde está no código.
+Cada tópico diz o que é, por que foi assim e onde está no código.
 
 ### 1. Organização por feature
 
