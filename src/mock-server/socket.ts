@@ -18,8 +18,11 @@ export function criarSocket({ bus, db, usuarioSessao }: Opcoes): Socket {
       return bus.assinar((e) => {
         const u = usuarioSessao()
         if (!u) return
-        const chamado = e.tipo === 'chamado.aberto' ? e.payload : db.estado().chamados[chamadoIdDe(e)]
-        if (!chamado || !visivelPara(u, chamado)) return
+        const id = chamadoIdDe(e)
+        const chamado = e.tipo === 'chamado.aberto' ? e.payload : db.estado().chamados[id]
+        // o db já aplicou o evento: o que tira o chamado da visão (ex.: reatribuído a outro grupo) só passa olhando o estado anterior
+        const anterior = db.anterior(id)
+        if (!chamado || !(visivelPara(u, chamado) || (anterior && visivelPara(u, anterior)))) return
         if (e.tipo === 'mensagem.adicionada' && !mensagemVisivel(u, e.payload)) return
         cb(e)
       })

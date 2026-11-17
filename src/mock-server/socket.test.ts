@@ -36,6 +36,15 @@ describe('socket', () => {
     bus.publicar({ id: 'b', tipo: 'chamado.atribuido', ocorrido_em: T, payload: { chamado_id: deOutro.id, consultor_id: 'x' } })
     expect(recebidos.map((e) => e.id)).toEqual(['a'])
   })
+  it('consultora recebe a atribuição que tira dela o #10608 (outro grupo)', async () => {
+    const { bus, recebidos } = await montar(() => MARINA)
+    const c10608 = DADOS.chamados.find((c) => c.numero === 10608)!
+    expect(c10608.responsavel_id).toBe(MARINA.id)
+    const deAplicacoes = DADOS.usuarios.find((u) => u.perfil === 'consultor' && u.grupo_id === c10608.grupo_id)!
+    bus.publicar({ id: 'r', tipo: 'chamado.atribuido', ocorrido_em: T, payload: { chamado_id: c10608.id, consultor_id: deAplicacoes.id } })
+    bus.publicar({ id: 's', tipo: 'status.alterado', ocorrido_em: T, payload: { chamado_id: c10608.id, de: 'em_atendimento', para: 'aguardando_cliente', motivo: 'm', usuario_id: deAplicacoes.id } })
+    expect(recebidos.map((e) => e.id)).toEqual(['r'])
+  })
   it('sem sessão, descarta tudo', async () => {
     const { bus, recebidos } = await montar(() => null)
     bus.publicar({ id: 'a', tipo: 'chamado.atribuido', ocorrido_em: T, payload: { chamado_id: DADOS.chamados[0]!.id, consultor_id: 'x' } })
