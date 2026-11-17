@@ -71,7 +71,9 @@
 .personaEmail { font-size: 13px; color: var(--cor-texto-fraco); overflow-wrap: anywhere; }
 
 .enviado { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: #f2f3f8; text-align: left; font-size: 14.5px; line-height: 1.4; }
-.enviado strong { font-weight: 600; color: var(--cor-texto); overflow-wrap: anywhere; }
+.enviado strong { font-weight: 600; color: var(--cor-texto); }
+/* quebra entre local e @domínio; anywhere só se uma parte sozinha não couber */
+.enviado strong span { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
 .enviadoIcone { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 50%; background: var(--cor-primaria-suave); color: var(--cor-primaria); }
 .enviadoIcone svg { width: 18px; height: 18px; }
 

@@ -155,6 +155,13 @@ function TelaEmail({ email, setEmail, pedir }: { email: string; setEmail: (v: st
   )
 }
 
+/** E-mail longo quebra antes do "@" e não no meio do domínio: cada parte é um bloco em linha. */
+function quebrarNoArroba(email: string) {
+  const i = email.lastIndexOf('@')
+  if (i <= 0) return email
+  return <><span>{email.slice(0, i)}</span><span>{email.slice(i)}</span></>
+}
+
 type Entrada = { mutate: (c: string) => void; isPending: boolean; isError: boolean; error: Error | null; reset: () => void }
 
 function TelaCodigo({ email, entrada, reenviar, reenviando, usarOutro }: { email: string; entrada: Entrada; reenviar: () => void; reenviando: boolean; usarOutro: () => void }) {
@@ -174,7 +181,7 @@ function TelaCodigo({ email, entrada, reenviar, reenviando, usarOutro }: { email
       sub={
         <span role="status" className={s.enviado}>
           <span className={s.enviadoIcone}><Icone nome="email" /></span>
-          <span>Se <strong>{email}</strong> puder entrar, o código chega em instantes. Vale por 10 minutos e só uma vez.</span>
+          <span>Se <strong>{quebrarNoArroba(email)}</strong> puder entrar, o código chega em instantes.</span>
         </span>
       }
       rodape={
